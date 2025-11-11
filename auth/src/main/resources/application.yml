@@ -1,5 +1,0 @@
-spring:
-  datasource:
-    url: jdbc:mysql://betterlife-db:3306/auth_db
-    username: auth_user
-    password: authpw
