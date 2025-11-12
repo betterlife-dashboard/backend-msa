@@ -15,6 +15,17 @@ spring:
                 - Path=/auth/**
               filters:
                 - name: JwtAuthFilter
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins:
+                  - "https://www.betterlifeboard.com"
+                  - "http://localhost:3000"
+                allowed-methods: "*"
+                allowed-headers: "*"
+                allow-credentials: true
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
 
 jwt:
   secret: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing
