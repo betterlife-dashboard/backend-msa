@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: "jdbc:mysql://localhost:3307/auth_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+    username: root
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: update
+  application:
+    name: auth
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+jwt:
+  secret: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing
+  accessExpiration: 3600000
+  refreshExpiration: 2592000000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
