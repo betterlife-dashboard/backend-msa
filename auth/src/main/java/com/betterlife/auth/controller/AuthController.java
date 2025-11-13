@@ -1,9 +1,6 @@
 package com.betterlife.auth.controller;
 
-import com.betterlife.auth.dto.LoginRequest;
-import com.betterlife.auth.dto.LoginResponse;
-import com.betterlife.auth.dto.RegisterRequest;
-import com.betterlife.auth.dto.UserResponse;
+import com.betterlife.auth.dto.*;
 import com.betterlife.auth.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +18,12 @@ public class AuthController {
     @GetMapping("/me")
     public ResponseEntity<UserResponse> me(@RequestHeader("X-User-Id") Long userId) {
         return ResponseEntity.ok(authService.me(userId));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
+        UserDto user = authService.findById(id);
+        return ResponseEntity.ok(user);
     }
 
     @PostMapping("/register")

@@ -1,10 +1,7 @@
 package com.betterlife.auth.service;
 
 import com.betterlife.auth.domain.User;
-import com.betterlife.auth.dto.LoginRequest;
-import com.betterlife.auth.dto.LoginResponse;
-import com.betterlife.auth.dto.RegisterRequest;
-import com.betterlife.auth.dto.UserResponse;
+import com.betterlife.auth.dto.*;
 import com.betterlife.auth.exception.DuplicateUserException;
 import com.betterlife.auth.exception.InvalidRequestException;
 import com.betterlife.auth.repository.UserRepository;
@@ -30,6 +27,16 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 유저입니다."));
         return UserResponse.builder()
+                .name(user.getName())
+                .email(user.getEmail())
+                .build();
+    }
+
+    public UserDto findById(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 유저입니다."));
+        return UserDto.builder()
+                .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .build();
