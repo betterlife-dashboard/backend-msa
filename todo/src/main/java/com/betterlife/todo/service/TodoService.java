@@ -41,10 +41,7 @@ public class TodoService {
     }
 
     public TodoResponse createTodo(Long userId, TodoRequest todoRequest) {
-        UserDto user = userClient.getUser(userId);
-        if (user == null) {
-            throw new EntityNotFoundException("존재하지 않는 유저입니다.");
-        }
+        userClient.getUser(userId);
         LocalDateTime activeFrom = todoRequest.getActiveFrom();
         LocalDateTime activeUntil = todoRequest.getActiveUntil();
         if (!todoRequest.getRepeatDays().equals(0)) {
