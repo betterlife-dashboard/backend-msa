@@ -9,11 +9,13 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 public class UserResponse {
+    private Long id;
     private String email;
     private String name;
 
     @Builder
-    public UserResponse(String name, String email) {
+    public UserResponse(Long id, String name, String email) {
+        this.id = id;
         this.name = name;
         this.email = email;
     }

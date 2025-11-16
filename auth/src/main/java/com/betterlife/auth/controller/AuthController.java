@@ -20,12 +20,6 @@ public class AuthController {
         return ResponseEntity.ok(authService.me(userId));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
-        UserDto user = authService.findById(id);
-        return ResponseEntity.ok(user);
-    }
-
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         authService.register(request);

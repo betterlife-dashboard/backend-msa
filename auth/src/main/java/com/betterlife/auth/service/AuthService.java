@@ -32,16 +32,6 @@ public class AuthService {
                 .build();
     }
 
-    public UserDto findById(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 유저입니다."));
-        return UserDto.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .build();
-    }
-
     public void register(RegisterRequest request) {
         if (request.getName() == null || request.getName().isBlank()) {
             throw new InvalidRequestException("아이디를 입력해주세요.");

@@ -1,10 +1,10 @@
 package com.betterlife.todo.service;
 
-import com.betterlife.todo.dto.UserDto;
+import com.betterlife.todo.dto.UserResponse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
@@ -19,9 +19,18 @@ public class UserClient {
     @Value("${auth.service.url}")
     private String authServiceUrl;
 
-    public UserDto getUser(Long userId) {
+    public UserResponse getUser(Long userId) {
         try {
-            return restTemplate.getForObject(authServiceUrl + "/auth/" + userId, UserDto.class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-User-Id", userId.toString());
+            HttpEntity<?> entity = new HttpEntity<>(headers);
+            ResponseEntity<UserResponse> response = restTemplate.exchange(
+                    authServiceUrl + "/auth/me",
+                    HttpMethod.GET,
+                    entity,
+                    UserResponse.class
+            );
+            return response.getBody();
         } catch (HttpClientErrorException e) {
             if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
                 throw new EntityNotFoundException("존재하지 않는 유저입니다.");

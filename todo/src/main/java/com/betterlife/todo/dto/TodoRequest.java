@@ -17,7 +17,7 @@ public class TodoRequest {
     private String title;
     private TodoType type;
     private TodoStatus status = TodoStatus.PLANNED;
-    private Integer repeatDays;
+    private int repeatDays;
     private LocalDateTime activeFrom;
     private LocalDateTime activeUntil;
 
@@ -25,7 +25,7 @@ public class TodoRequest {
     public TodoRequest(String title,
                        TodoType type,
                        TodoStatus status,
-                       Integer repeatDays,
+                       int repeatDays,
                        LocalDateTime activeFrom,
                        LocalDateTime activeUntil) {
         this.title = title;
