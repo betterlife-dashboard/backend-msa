@@ -7,11 +7,11 @@ WORKDIR /app
 # 의존성 캐싱
 COPY build.gradle settings.gradle ./
 COPY gradle gradle
-RUN gradle build -x test --parallel || return 0
+RUN gradle dependencies --no-daemon || true
 
 # 실제 전체 소스 복사 후 빌드
 COPY . .
-RUN gradle clean build -x test --parallel
+RUN gradle clean build -x test --no-daemon
 
 # ============================
 # 2단계: Runtime Stage

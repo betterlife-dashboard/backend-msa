@@ -15,13 +15,6 @@ help:
 	@echo " make logs-todo     - Todo 로그 보기"
 	@echo " make logs-gateway  - Gateway 로그 보기"
 	@echo " make clean         - 사용하지 않는 이미지/컨테이너 정리"
-	@echo ""
-	@echo "🔥 [운영] Prod Commands"
-	@echo " make prod-up       - 운영용 전체 실행"
-	@echo " make prod-auth     - 운영에서 Auth만 재배포"
-	@echo " make prod-todo     - 운영에서 Todo만 재배포"
-	@echo " make prod-gateway  - 운영에서 Gateway만 재배포"
-	@echo " make prod-down     - 운영 전체 종료"
 
 # ------------------------------
 # LOCAL DEVELOPMENT COMMANDS
@@ -72,23 +65,4 @@ logs-gateway:
 clean:
 	docker system prune -f
 
-# ------------------------------
-# PRODUCTION COMMANDS (EC2)
-# ------------------------------
-
-prod-up:
-	docker compose -f docker-compose.prod.yml up -d
-
-prod-auth:
-	docker compose -f docker-compose.prod.yml up -d auth
-
-prod-todo:
-	docker compose -f docker-compose.prod.yml up -d todo
-
-prod-gateway:
-	docker compose -f docker-compose.prod.yml up -d gateway
-
-prod-down:
-	docker compose -f docker-compose.prod.yml down
-
-.PHONY: help up up-db up-auth up-todo up-gateway down logs-auth logs-todo logs-gateway clean prod-up prod-auth prod-todo prod-gateway prod-down
+.PHONY: help up up-db up-auth up-todo up-gateway down logs-auth logs-todo logs-gateway clean
