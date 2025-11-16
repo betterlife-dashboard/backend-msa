@@ -1,9 +1,6 @@
 package com.betterlife.auth.controller;
 
-import com.betterlife.auth.dto.LoginRequest;
-import com.betterlife.auth.dto.LoginResponse;
-import com.betterlife.auth.dto.RegisterRequest;
-import com.betterlife.auth.dto.UserResponse;
+import com.betterlife.auth.dto.*;
 import com.betterlife.auth.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

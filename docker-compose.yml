@@ -12,9 +12,21 @@ services:
       timeout: 3s
       retries: 30
 
+  mysql-todo:
+    image: mysql:8
+    environment: { MYSQL_ROOT_PASSWORD: root, MYSQL_DATABASE: todo_db }
+    ports:
+      - "3308:3306"
+    volumes:
+      - todo-data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -proot --silent" ]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
   redis:
     image: redis:7
-    container_name: redis
     ports:
       - "6379:6379"
     volumes:
@@ -28,17 +40,18 @@ services:
   auth:
     build: ./auth
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-auth:3306/auth_db
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_PROFILES_ACTIVE: docker
+      AUTH_DATASOURCE_URL: jdbc:mysql://mysql-auth:3306/auth_db
+      AUTH_DATASOURCE_USERNAME: root
+      AUTH_DATASOURCE_PASSWORD: root
       # Redis (반드시 서비스명 지정)
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
+      AUTH_REDIS_HOST: redis
+      AUTH_REDIS_PORT: 6379
       # Hikari가 DB 준비전 실패하지 않게(0 = fail-fast 끔)
       SPRING_DATASOURCE_HIKARI_INITIALIZATIONFAILTIMEOUT: "0"
       JWT_SECRET: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing
     ports:
-      - "8081:8080"
+      - "8081:8081"
     depends_on:
       mysql-auth:
         condition: service_healthy
@@ -46,17 +59,36 @@ services:
         condition: service_healthy
     restart: on-failure
 
+  todo:
+    build: ./todo
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      TODO_DATASOURCE_URL: jdbc:mysql://mysql-todo:3306/todo_db
+      TODO_DATASOURCE_USERNAME: root
+      TODO_DATASOURCE_PASSWORD: root
+      AUTH_SERVICE_URL: http://auth:8081
+      # Hikari가 DB 준비전 실패하지 않게(0 = fail-fast 끔)
+      SPRING_DATASOURCE_HIKARI_INITIALIZATIONFAILTIMEOUT: "0"
+    ports:
+      - "8082:8082"
+    depends_on:
+      mysql-todo:
+        condition: service_healthy
+    restart: on-failure
+
   gateway:
     build: ./gateway
     environment:
-      AUTH_SERVICE_URL: http://auth:8080
+      SPRING_PROFILES_ACTIVE: docker
+      AUTH_SERVICE_URL: http://auth:8081
+      TODO_SERVICE_URL: http://todo:8082
+      FRONTEND_URL: http://localhost:5173
       JWT_SECRET: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing
     ports:
       - "8080:8080"
-    depends_on:
-      - auth
     restart: on-failure
 
 volumes:
   auth-data:
+  todo-data:
   redis-data:

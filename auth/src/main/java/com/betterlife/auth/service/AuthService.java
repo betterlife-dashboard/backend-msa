@@ -1,10 +1,7 @@
 package com.betterlife.auth.service;
 
 import com.betterlife.auth.domain.User;
-import com.betterlife.auth.dto.LoginRequest;
-import com.betterlife.auth.dto.LoginResponse;
-import com.betterlife.auth.dto.RegisterRequest;
-import com.betterlife.auth.dto.UserResponse;
+import com.betterlife.auth.dto.*;
 import com.betterlife.auth.exception.DuplicateUserException;
 import com.betterlife.auth.exception.InvalidRequestException;
 import com.betterlife.auth.repository.UserRepository;

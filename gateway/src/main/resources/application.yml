@@ -10,27 +10,44 @@ spring:
         webflux:
           routes:
             - id: auth
-              uri: "${AUTH_SERVICE_URL:http://localhost:8081}"
+              uri: ${AUTH_SERVICE_URL}
               predicates:
                 - Path=/auth/**
               filters:
                 - name: JwtAuthFilter
-          globalcors:
-            cors-configurations:
-              '[/**]':
-                allowed-origins:
-                  - "https://www.betterlifeboard.com"
-                  - "http://localhost:3000"
-                allowed-methods: "*"
-                allowed-headers: "*"
-                allow-credentials: true
-          default-filters:
-            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
+
+            - id: todo
+              uri: ${TODO_SERVICE_URL}
+              predicates:
+                - Path=/todo/**
+              filters:
+                - name: JwtAuthFilter
+
+            - id: auth-docs
+              uri: ${AUTH_SERVICE_URL}
+              predicates:
+                - Path=/docs/auth/**
+              filters:
+                - StripPrefix=2
+
+            - id: todo-docs
+              uri: ${TODO_SERVICE_URL}
+              predicates:
+                - Path=/docs/todo/**
+              filters:
+                - StripPrefix=2
 
 jwt:
-  secret: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing
-  accessExpiration: 3600000
-  refreshExpiration: 2592000000
+  secret: ${JWT_SECRET}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Auth Service
+        url: /docs/auth/v3/api-docs
+      - name: Todo Service
+        url: /docs/todo/v3/api-docs
 
 management:
   endpoints:

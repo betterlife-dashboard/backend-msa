@@ -4,10 +4,12 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -31,7 +33,15 @@ public class JwtAuthFilter extends AbstractGatewayFilterFactory<JwtAuthFilter.Co
             String path = exchange.getRequest().getURI().getPath();
             if (path.startsWith("/auth/login")
                 || path.startsWith("/auth/register")
-                || path.startsWith("/auth/renew")) {
+                || path.startsWith("/auth/renew")
+                || path.startsWith("/docs")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/swagger-ui")) {
+                return chain.filter(exchange);
+            }
+
+            HttpMethod method = exchange.getRequest().getMethod();
+            if (method.matches(HttpMethod.OPTIONS.toString())) {
                 return chain.filter(exchange);
             }
 
@@ -47,7 +57,7 @@ public class JwtAuthFilter extends AbstractGatewayFilterFactory<JwtAuthFilter.Co
                         .parseSignedClaims(header.substring(7))
                         .getPayload();
 
-                String userId = claims.get("userId", String.class);
+                String userId = claims.getSubject();
                 exchange = exchange.mutate()
                         .request(r -> r.headers(h -> {
                             h.add("X-User-Id", userId);

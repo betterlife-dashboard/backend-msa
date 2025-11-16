@@ -1,0 +1,29 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: todo
+  datasource:
+    url: ${TODO_DATASOURCE_URL}
+    username: ${TODO_DATASOURCE_USERNAME}
+    password: ${TODO_DATASOURCE_PASSWORD}
+
+auth:
+  service:
+    url: ${AUTH_SERVICE_URL}
+
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
