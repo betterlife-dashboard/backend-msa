@@ -4,6 +4,7 @@
 -- todos 테이블 정의
 -- ============================
 
+-- 한번 바꾼 스키마는 절대 바꾸지말기 - 추가하는 형식으로 가야함
 CREATE TABLE todos (
     id BIGINT NOT NULL AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
