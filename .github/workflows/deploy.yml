@@ -16,9 +16,39 @@ env:
   EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
 jobs:
+  detect-changes:
+    name: Detect changed services
+    runs-on: ubuntu-latest
+    outputs:
+      gateway: ${{ steps.changed.outputs.gateway }}
+      auth: ${{ steps.changed.outputs.auth }}
+      todo: ${{ steps.changed.outputs.todo }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect changes
+        id: changed
+        uses: tj-actions/changed-files@v41
+        with:
+          files_yaml: |
+            gateway:
+              - "gateway/**"
+            auth:
+              - "auth/**"
+            todo:
+              - "todo/**"
+
   build-and-push:
     name: Build & Push Docker Images
+    needs: detect-changes
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service: [gateway, auth, todo]
+
+    if: needs.detect-changes.outputs[matrix.service] == 'true'
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,27 +65,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push gateway image
+      - name: Build and push image
         run : |
-          docker build -f gateway/Dockerfile -t ${{ env.DOCKERHUB_NAMESPACE }}/gateway:${{ env.IMAGE_TAG }} gateway
-          docker push ${{ env.DOCKERHUB_NAMESPACE }}/gateway:${{ env.IMAGE_TAG }}
-          docker tag ${{ env.DOCKERHUB_NAMESPACE }}/gateway:${{ env.IMAGE_TAG }} ${{ env.DOCKERHUB_NAMESPACE }}/gateway:latest
-          docker push ${{ env.DOCKERHUB_NAMESPACE }}/gateway:latest
+          docker build -f ${{ matrix.service }}/Dockerfile -t ${{ env.DOCKERHUB_NAMESPACE }}/${{ matrix.service }}:${{ env.IMAGE_TAG }} ${{ matrix.service }}
+          docker push ${{ env.DOCKERHUB_NAMESPACE }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
+          docker tag ${{ env.DOCKERHUB_NAMESPACE }}/${{ matrix.service }}:${{ env.IMAGE_TAG }} ${{ env.DOCKERHUB_NAMESPACE }}/${{ matrix.service }}:latest
+          docker push ${{ env.DOCKERHUB_NAMESPACE }}/${{ matrix.service }}:latest
 
-      - name: Build and push auth image
-        run : |
-          docker build -f auth/Dockerfile -t ${{ env.DOCKERHUB_NAMESPACE }}/auth:${{ env.IMAGE_TAG }} auth
-          docker push ${{ env.DOCKERHUB_NAMESPACE }}/auth:${{ env.IMAGE_TAG }}
-          docker tag ${{ env.DOCKERHUB_NAMESPACE }}/auth:${{ env.IMAGE_TAG }} ${{ env.DOCKERHUB_NAMESPACE }}/auth:latest
-          docker push ${{ env.DOCKERHUB_NAMESPACE }}/auth:latest
-
-      - name: Build and push todo image
-        run : |
-          docker build -f todo/Dockerfile -t ${{ env.DOCKERHUB_NAMESPACE }}/todo:${{ env.IMAGE_TAG }} todo
-          docker push ${{ env.DOCKERHUB_NAMESPACE }}/todo:${{ env.IMAGE_TAG }}
-          docker tag ${{ env.DOCKERHUB_NAMESPACE }}/todo:${{ env.IMAGE_TAG }} ${{ env.DOCKERHUB_NAMESPACE }}/todo:latest
-          docker push ${{ env.DOCKERHUB_NAMESPACE }}/todo:latest
-          
   deploy:
     name: Deploy to EC2
     runs-on: ubuntu-latest

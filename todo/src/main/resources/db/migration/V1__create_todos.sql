@@ -13,8 +13,8 @@ CREATE TABLE todos (
     is_recurring BOOLEAN DEFAULT FALSE,
     repeat_days INT DEFAULT 0,
     parent_todo_id BIGINT,
-    active_from DATE,
-    active_until DATE,
+    active_from DATETIME,
+    active_until DATETIME,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
