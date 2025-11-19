@@ -12,9 +12,11 @@ public class TodoScheduler {
 
     private final TodoService todoService;
 
-    @Transactional
     @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
     public void generateDailyRecurringTodos() {
         todoService.generateRecurringTodos();
     }
+
+    @Scheduled(cron = "0 */10 * * * *", zone = "Asia/Seoul")
+    public void closePastTodos() { todoService.closePastTodos(); }
 }

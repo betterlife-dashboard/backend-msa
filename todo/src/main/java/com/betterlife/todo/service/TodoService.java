@@ -113,7 +113,7 @@ public class TodoService {
     }
 
     public List<TodoResponse> getRecurTodos(Long userId) {
-        return todoRepository.findAllByUserIdAndIsRecurring(userId)
+        return todoRepository.findAllByUserIdAndIsRecurring(userId, true)
                 .stream()
                 .map(TodoResponse::fromEntity)
                 .toList();
@@ -128,7 +128,7 @@ public class TodoService {
 
     @Transactional
     public void generateRecurringTodos() {
-        List<Todo> todos = todoRepository.findAllByIsRecurring();
+        List<Todo> todos = todoRepository.findAllByIsRecurring(true);
         for (Todo todo : todos) {
             if (checkRepeatDate(todo.getRepeatDays())) {
                 Todo child = Todo.builder()
@@ -142,6 +142,15 @@ public class TodoService {
                         .build();
                 todo.addChildTodo(child);
             }
+        }
+    }
+
+    @Transactional
+    public void closePastTodos() {
+        LocalDateTime currentTime = LocalDateTime.now();
+        List<Todo> todos = todoRepository.findAllByTodoStatusPlannedAndActiveUntilBefore(currentTime);
+        for (Todo todo : todos) {
+            todo.updateStatus(TodoStatus.EXPIRED);
         }
     }
 }

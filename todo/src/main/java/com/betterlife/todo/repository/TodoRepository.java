@@ -35,4 +35,8 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
     );
 
     List<Todo> findAllByIsRecurring(Boolean isRecurring);
+
+    List<Todo> findAllByTodoStatusPlannedAndActiveUntilBefore(
+            LocalDateTime currentTime
+    );
 }
