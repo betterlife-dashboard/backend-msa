@@ -28,20 +28,11 @@ public interface TodoRepository extends JpaRepository<Todo, Long> {
             @Param("endOfDay") LocalDateTime endOfDay
     );
 
-    @Query("""
-    SELECT t
-    FROM Todo t
-    WHERE t.userId = :userId
-    AND t.isRecurring = true
-""")
+
     List<Todo> findAllByUserIdAndIsRecurring(
-            @Param("userId") Long userId
+            Long userId,
+            Boolean isRecurring
     );
 
-    @Query("""
-    SELECT t
-    FROM Todo t
-    WHERE t.isRecurring = true
-""")
-    List<Todo> findAllByIsRecurring();
+    List<Todo> findAllByIsRecurring(Boolean isRecurring);
 }
