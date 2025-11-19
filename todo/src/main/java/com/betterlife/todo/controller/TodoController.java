@@ -21,7 +21,6 @@ public class TodoController {
 
     @GetMapping("/{date}")
     public ResponseEntity<List<TodoResponse>> getTodosByDate(@PathVariable LocalDate date, @RequestHeader("X-User-Id") Long userId) {
-        System.out.println("nothing");
         List<TodoResponse> todos = todoService.getTodosByDate(userId, date);
         return ResponseEntity.ok(todos);
     }
