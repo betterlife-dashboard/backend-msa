@@ -1,0 +1,72 @@
+name: Deploy todo Services to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "todo/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOCKERHUB_NAMESPACE: shinhs6384
+  IMAGE_TAG: ${{ github.sha }}
+  EC2_HOST: ${{ secrets.EC2_HOST }}
+  EC2_USER: ${{ secrets.EC2_USER }}
+  EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push todo image
+        run : |
+          docker build -f todo/Dockerfile -t ${{ env.DOCKERHUB_NAMESPACE }}/todo:${{ env.IMAGE_TAG }} todo
+          docker push ${{ env.DOCKERHUB_NAMESPACE }}/todo:${{ env.IMAGE_TAG }}
+          docker tag ${{ env.DOCKERHUB_NAMESPACE }}/todo:${{ env.IMAGE_TAG }} ${{ env.DOCKERHUB_NAMESPACE }}/todo:latest
+          docker push ${{ env.DOCKERHUB_NAMESPACE }}/todo:latest
+
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+      - name: SSH into EC2 and run deploy
+        uses: appleboy/ssh-action@v0.1.8
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ${{ env.EC2_USER }}
+          key: ${{ env.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/app
+            docker compose -f docker-compose.prod.yml pull todo
+            docker compose -f docker-compose.prod.yml up -d todo
