@@ -24,9 +24,9 @@ public class TodoService {
     private final UserClient userClient;
 
     public List<TodoResponse> getTodosByDate(Long userId, LocalDate date) {
-        LocalDateTime start = date.atStartOfDay();
-        LocalDateTime end = date.plusDays(1).atStartOfDay();
-        return todoRepository.findAllByUserIdAndDateWithinActivePeriod(userId, start, end)
+        LocalDateTime todayStart = date.atStartOfDay();
+        LocalDateTime todayEnd = date.plusDays(1).atStartOfDay().minusSeconds(1);
+        return todoRepository.findAllByUserIdAndActiveFromBeforeAndActiveUntilAfter(userId, todayEnd, todayStart)
                 .stream()
                 .map(TodoResponse::fromEntity)
                 .toList();
@@ -44,6 +44,9 @@ public class TodoService {
         userClient.getUser(userId);
         LocalDateTime activeFrom = todoRequest.getActiveFrom();
         LocalDateTime activeUntil = todoRequest.getActiveUntil();
+        if (todoRequest.getRepeatDays() == 0 && activeFrom.isAfter(activeUntil)) {
+            throw new InvalidRequestException("날짜 설정이 잘못되었습니다.");
+        }
         if (todoRequest.getRepeatDays() != 0) {
             activeFrom = null;
             activeUntil = null;
@@ -64,8 +67,8 @@ public class TodoService {
                     .type(todoRequest.getType())
                     .status(TodoStatus.PLANNED)
                     .repeatDays(0)
-                    .activeFrom(LocalDateTime.now())
-                    .activeUntil(LocalDateTime.now())
+                    .activeFrom(LocalDate.now().atStartOfDay())
+                    .activeUntil(LocalDate.now().plusDays(1).atStartOfDay().minusSeconds(1))
                     .build();
             todo.addChildTodo(child);
         }
@@ -113,7 +116,7 @@ public class TodoService {
     }
 
     public List<TodoResponse> getRecurTodos(Long userId) {
-        return todoRepository.findAllByUserIdAndIsRecurring(userId)
+        return todoRepository.findAllByUserIdAndIsRecurring(userId, true)
                 .stream()
                 .map(TodoResponse::fromEntity)
                 .toList();
@@ -128,7 +131,7 @@ public class TodoService {
 
     @Transactional
     public void generateRecurringTodos() {
-        List<Todo> todos = todoRepository.findAllByIsRecurring();
+        List<Todo> todos = todoRepository.findAllByIsRecurring(true);
         for (Todo todo : todos) {
             if (checkRepeatDate(todo.getRepeatDays())) {
                 Todo child = Todo.builder()
@@ -137,11 +140,18 @@ public class TodoService {
                         .type(todo.getType())
                         .status(TodoStatus.PLANNED)
                         .repeatDays(0)
-                        .activeFrom(LocalDateTime.now())
-                        .activeUntil(LocalDateTime.now())
+                        .activeFrom(LocalDate.now().atStartOfDay())
+                        .activeUntil(LocalDate.now().plusDays(1).atStartOfDay().minusSeconds(1))
                         .build();
                 todo.addChildTodo(child);
             }
         }
+    }
+
+    @Transactional
+    public void closePastTodos() {
+        LocalDateTime currentTime = LocalDateTime.now();
+        List<Todo> todos = todoRepository.findAllByStatusAndActiveUntilBefore(TodoStatus.PLANNED, currentTime);
+        todos.forEach(todo -> todo.updateStatus(TodoStatus.EXPIRED));
     }
 }

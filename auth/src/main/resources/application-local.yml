@@ -10,6 +10,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  flyway:
+    enabled: false
 
 jwt:
   secret: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing
