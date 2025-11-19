@@ -30,9 +30,11 @@ public class Todo {
 
     private String title;
 
+    @Column(columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     private TodoType type = TodoType.GENERAL;
 
+    @Column(columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     private TodoStatus status = TodoStatus.PLANNED;
 
