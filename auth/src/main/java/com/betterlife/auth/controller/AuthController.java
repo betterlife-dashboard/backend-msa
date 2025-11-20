@@ -69,4 +69,20 @@ public class AuthController {
         response.addHeader("Set-Cookie", cookie.toString());
         return ResponseEntity.noContent().build();
     }
+
+    @DeleteMapping("/withdraw")
+    public ResponseEntity<Void> withdraw(@CookieValue(name = "refresh_token", required = false) String refreshToken, HttpServletResponse response) {
+        if (refreshToken != null) {
+            authService.withdraw(refreshToken);
+        }
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("None")
+                .maxAge(0)
+                .build();
+        response.addHeader("Set-Cookie", cookie.toString());
+        return ResponseEntity.noContent().build();
+    }
 }

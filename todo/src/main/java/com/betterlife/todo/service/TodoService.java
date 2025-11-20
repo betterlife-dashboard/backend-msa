@@ -1,5 +1,6 @@
 package com.betterlife.todo.service;
 
+import com.betterlife.todo.client.UserClient;
 import com.betterlife.todo.domain.Todo;
 import com.betterlife.todo.dto.*;
 import com.betterlife.todo.enums.TodoStatus;
