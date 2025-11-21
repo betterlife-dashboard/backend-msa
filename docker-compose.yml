@@ -83,6 +83,10 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       AUTH_SERVICE_URL: http://auth:8081
       TODO_SERVICE_URL: http://todo:8082
+      OPENAPI_SERVICES_0_NAME: auth
+      OPENAPI_SERVICES_0_URL: http://auth:8081
+      OPENAPI_SERVICES_1_NAME: todo
+      OPENAPI_SERVICES_1_URL: http://todo:8081
       FRONTEND_URL: http://localhost:5173
       JWT_SECRET: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing
     ports:

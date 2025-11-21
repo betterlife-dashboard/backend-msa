@@ -18,6 +18,15 @@ jwt:
   accessExpiration: 3600000
   refreshExpiration: 2592000000
 
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+
 management:
   endpoints:
     web:

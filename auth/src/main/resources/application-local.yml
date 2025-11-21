@@ -16,15 +16,6 @@ spring:
 jwt:
   secret: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing
 
-springdoc:
-  api-docs:
-    enabled: true
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    operations-sorter: alpha
-    tags-sorter: alpha
-
 todo:
   service:
     url: http://localhost:8082

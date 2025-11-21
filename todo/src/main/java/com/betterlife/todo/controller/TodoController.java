@@ -61,10 +61,10 @@ public class TodoController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/delete_user")
-    public ResponseEntity<Boolean> deleteUser(@RequestHeader("X-User-Id") Long userId) {
+    @DeleteMapping("/user")
+    public ResponseEntity<Void> deleteUser(@RequestHeader("X-User-Id") Long userId) {
         todoService.deleteUser(userId);
-        return ResponseEntity.ok(true);
+        return ResponseEntity.noContent().build();
     }
 
 }

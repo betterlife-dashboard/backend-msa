@@ -10,44 +10,28 @@ spring:
         webflux:
           routes:
             - id: auth
-              uri: ${AUTH_SERVICE_URL}
+              uri: ${auth.service.url}
               predicates:
                 - Path=/auth/**
               filters:
                 - name: JwtAuthFilter
 
             - id: todo
-              uri: ${TODO_SERVICE_URL}
+              uri: ${todo.service.url}
               predicates:
                 - Path=/todo/**
               filters:
                 - name: JwtAuthFilter
 
-            - id: auth-docs
-              uri: ${AUTH_SERVICE_URL}
-              predicates:
-                - Path=/docs/auth/**
-              filters:
-                - StripPrefix=2
-
-            - id: todo-docs
-              uri: ${TODO_SERVICE_URL}
-              predicates:
-                - Path=/docs/todo/**
-              filters:
-                - StripPrefix=2
-
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${jwt.secret}
 
 springdoc:
+  api-docs:
+    enabled: false
   swagger-ui:
-    path: /swagger-ui.html
-    urls:
-      - name: Auth Service
-        url: /docs/auth/v3/api-docs
-      - name: Todo Service
-        url: /docs/todo/v3/api-docs
+    url: /v3/api-docs
+
 
 management:
   endpoints:

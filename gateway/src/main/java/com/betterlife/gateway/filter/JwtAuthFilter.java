@@ -60,7 +60,7 @@ public class JwtAuthFilter extends AbstractGatewayFilterFactory<JwtAuthFilter.Co
                 String userId = claims.getSubject();
                 exchange = exchange.mutate()
                         .request(r -> r.headers(h -> {
-                            h.add("X-User-Id", userId);
+                            h.set("X-User-Id", userId);
                         }))
                         .build();
                 return chain.filter(exchange);

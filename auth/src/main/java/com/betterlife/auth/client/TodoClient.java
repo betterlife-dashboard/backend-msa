@@ -23,7 +23,7 @@ public class TodoClient {
             headers.set("X-User-Id", userId.toString());
             HttpEntity<?> entity = new HttpEntity<>(headers);
             ResponseEntity<Boolean> response = restTemplate.exchange(
-                    todoServiceUrl + "/todo/delete_user",
+                    todoServiceUrl + "/todo/user",
                     HttpMethod.DELETE,
                     entity,
                     Boolean.class
