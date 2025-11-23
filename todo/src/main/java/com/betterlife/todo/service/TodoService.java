@@ -4,6 +4,7 @@ import com.betterlife.todo.client.UserClient;
 import com.betterlife.todo.domain.Todo;
 import com.betterlife.todo.dto.*;
 import com.betterlife.todo.enums.TodoStatus;
+import com.betterlife.todo.enums.TodoType;
 import com.betterlife.todo.exception.AccessDeniedException;
 import com.betterlife.todo.exception.InvalidRequestException;
 import com.betterlife.todo.repository.TodoRepository;
@@ -28,6 +29,15 @@ public class TodoService {
         LocalDateTime todayStart = date.atStartOfDay();
         LocalDateTime todayEnd = date.plusDays(1).atStartOfDay().minusSeconds(1);
         return todoRepository.findAllByUserIdAndActiveFromBeforeAndActiveUntilAfter(userId, todayEnd, todayStart)
+                .stream()
+                .map(TodoResponse::fromEntity)
+                .toList();
+    }
+
+    public List<TodoResponse> getTodosByScheduledAndMonth(Long userId, LocalDate month) {
+        LocalDateTime monthStart = month.atStartOfDay();
+        LocalDateTime monthEnd = month.plusMonths(1).atStartOfDay().minusSeconds(1);
+        return todoRepository.findAllByUserIdAndTypeAndActiveFromBeforeAndActiveUntilAfter(userId, TodoType.SCHEDULE, monthEnd, monthStart)
                 .stream()
                 .map(TodoResponse::fromEntity)
                 .toList();

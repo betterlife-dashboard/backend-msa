@@ -11,6 +11,12 @@ spring:
       hibernate:
         format_sql: true
     show-sql: true
+  flyway:
+    enabled: false
+
+todo:
+  service:
+    url: http://localhost:8082
 
 jwt:
   secret: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing

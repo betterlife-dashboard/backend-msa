@@ -2,6 +2,7 @@ package com.betterlife.todo.dto;
 
 import com.betterlife.todo.enums.TodoStatus;
 import com.betterlife.todo.enums.TodoType;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,4 +20,13 @@ public class TodoRequest {
     private LocalDateTime activeFrom;
     private LocalDateTime activeUntil;
 
+    @Builder
+    public TodoRequest(String title, TodoType type, TodoStatus status, int repeatDays, LocalDateTime activeFrom, LocalDateTime activeUntil) {
+        this.title = title;
+        this.type = type;
+        this.status = status;
+        this.repeatDays = repeatDays;
+        this.activeFrom = activeFrom;
+        this.activeUntil = activeUntil;
+    }
 }

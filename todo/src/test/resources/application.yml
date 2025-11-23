@@ -11,4 +11,10 @@ spring:
       hibernate:
         format_sql: true
     show-sql: true
+  flyway:
+    enabled: false
+
+auth:
+  service:
+    url: http://localhost:8081
 

@@ -25,6 +25,12 @@ public class TodoController {
         return ResponseEntity.ok(todos);
     }
 
+    @GetMapping("/schedule/{month}")
+    public ResponseEntity<List<TodoResponse>> getTodosByScheduledAndMonth(@PathVariable("month") LocalDate month, @RequestHeader("X-User-Id") Long userId) {
+        List<TodoResponse> todos = todoService.getTodosByScheduledAndMonth(userId, month);
+        return ResponseEntity.ok(todos);
+    }
+
     @GetMapping("/detail/{id}")
     public ResponseEntity<TodoResponse> getTodoDetail(@PathVariable("id") Long id, @RequestHeader("X-User-Id") Long userId) {
         TodoResponse todoResponse = todoService.getTodoById(userId, id);
