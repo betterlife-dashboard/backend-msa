@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3309/notification_db
+    url: jdbc:mysql://localhost:3309/notify_db
     username: root
     password: root
   jpa:

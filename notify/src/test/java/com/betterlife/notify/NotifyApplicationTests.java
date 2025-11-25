@@ -1,10 +1,10 @@
-package com.betterlife.notification;
+package com.betterlife.notify;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class NotificationApplicationTests {
+class NotifyApplicationTests {
 
     @Test
     void contextLoads() {

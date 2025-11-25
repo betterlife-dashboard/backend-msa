@@ -3,11 +3,11 @@ server:
 
 spring:
   application:
-    name: notification
+    name: notify
   datasource:
-    url: ${NOTIFICATION_DATASOURCE_URL}
-    username: ${NOTIFICATION_DATASOURCE_USERNAME}
-    password: ${NOTIFICATION_DATASOURCE_PASSWORD}
+    url: ${NOTIFY_DATASOURCE_URL}
+    username: ${NOTIFY_DATASOURCE_USERNAME}
+    password: ${NOTIFY_DATASOURCE_PASSWORD}
 
 springdoc:
   api-docs:

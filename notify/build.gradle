@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.betterlife'
 version = '0.0.1-SNAPSHOT'
-description = 'notification'
+description = 'notify'
 
 java {
     toolchain {
