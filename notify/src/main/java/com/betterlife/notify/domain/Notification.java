@@ -12,6 +12,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Table(name = "notifications")
@@ -28,6 +29,9 @@ public class Notification {
     @Column(nullable = false)
     private Long userId;
 
+    @Column(nullable = false)
+    private Long todoId;
+
     @Column(columnDefinition = "VARCHAR(20)")
     @Enumerated(EnumType.STRING)
     private EventType eventType;
@@ -38,9 +42,8 @@ public class Notification {
     @Column(nullable = false)
     private String body;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "json")
-    private Map<String, Object> data;
+    @Column(name = "send_at", nullable = false)
+    private LocalDateTime sendAt;
 
     @Column(nullable = false)
     private Boolean isRead = false;
@@ -49,26 +52,24 @@ public class Notification {
     @Column(name = "created_at", updatable = false)
     private Timestamp createdAt;
 
-    @Column(name = "updated_at")
-    @LastModifiedDate
-    private Timestamp updatedAt;
+    @Column(name = "read_at")
+    private Timestamp readAt;
 
     @Builder
     public Notification(
-            Long id,
             Long userId,
+            Long todoId,
             EventType eventType,
             String title,
             String body,
-            Map<String, Object> data,
-            Boolean isRead
+            LocalDateTime sendAt
     ) {
-        this.id = id;
         this.userId = userId;
+        this.todoId = todoId;
         this.eventType = eventType;
         this.title = title;
         this.body = body;
-        this.data = data;
-        this.isRead = isRead;
+        this.sendAt = sendAt;
+        this.isRead = false;
     }
 }

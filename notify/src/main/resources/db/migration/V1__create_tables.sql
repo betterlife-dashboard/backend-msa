@@ -8,10 +8,11 @@
 CREATE TABLE notifications (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,
+    todo_id BIGINT NOT NULL,
     event_type VARCHAR(20) NOT NULL,
     title VARCHAR(20) NOT NULL,
     body TEXT NOT NULL,
-    data JSON NOT NULL,
+    send_at DATETIME NOT NULL,
     is_read BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     read_at TIMESTAMP
