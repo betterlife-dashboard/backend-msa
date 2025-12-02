@@ -10,6 +10,7 @@ CREATE TABLE notifications (
     user_id BIGINT NOT NULL,
     todo_id BIGINT NOT NULL,
     event_type VARCHAR(20) NOT NULL,
+    remain_time VARCHAR(10) NOT NULL,
     title VARCHAR(20) NOT NULL,
     body TEXT NOT NULL,
     send_at DATETIME,
