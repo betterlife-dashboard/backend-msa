@@ -11,4 +11,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     void deleteNotificationByTodoId(Long todoId);
 
     void deleteNotificationByUserId(Long todoId);
+
+    List<Notification> findAllByUserIdAndTodoId(Long userId, Long todoId);
+
+    List<Notification> findAllByUserId(Long userId);
 }

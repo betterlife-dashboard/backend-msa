@@ -37,6 +37,9 @@ public class Notification {
     private EventType eventType;
 
     @Column(nullable = false)
+    private String remainTime;
+
+    @Column(nullable = false)
     private String title;
 
     @Column(nullable = false)
@@ -60,6 +63,7 @@ public class Notification {
             Long userId,
             Long todoId,
             EventType eventType,
+            String remainTime,
             String title,
             String body,
             LocalDateTime sendAt
@@ -67,6 +71,7 @@ public class Notification {
         this.userId = userId;
         this.todoId = todoId;
         this.eventType = eventType;
+        this.remainTime = remainTime;
         this.title = title;
         this.body = body;
         this.sendAt = sendAt;
