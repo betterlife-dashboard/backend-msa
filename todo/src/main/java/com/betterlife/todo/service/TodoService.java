@@ -5,8 +5,10 @@ import com.betterlife.todo.domain.Todo;
 import com.betterlife.todo.dto.*;
 import com.betterlife.todo.enums.TodoStatus;
 import com.betterlife.todo.enums.TodoType;
+import com.betterlife.todo.event.TodoEvent;
 import com.betterlife.todo.exception.AccessDeniedException;
 import com.betterlife.todo.exception.InvalidRequestException;
+import com.betterlife.todo.producer.EventProducer;
 import com.betterlife.todo.repository.TodoRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class TodoService {
 
     private final TodoRepository todoRepository;
     private final UserClient userClient;
+    private final EventProducer eventProducer;
 
     public List<TodoResponse> getTodosByDate(Long userId, LocalDate date) {
         LocalDateTime todayStart = date.atStartOfDay();
@@ -87,6 +90,30 @@ public class TodoService {
         return TodoResponse.fromEntity(saved);
     }
 
+    public TodoResponse createSchedule(Long userId, ScheduleRequest scheduleRequest) {
+        userClient.getUser(userId);
+        Todo todo = Todo.builder()
+                .userId(userId)
+                .title(scheduleRequest.getTitle())
+                .type(scheduleRequest.getType())
+                .status(TodoStatus.PLANNED)
+                .repeatDays(0)
+                .activeFrom(scheduleRequest.getActiveFrom())
+                .activeUntil(scheduleRequest.getActiveUntil())
+                .build();
+        Todo saved = todoRepository.save(todo);
+        scheduleRequest.getAlarms().forEach(alarm -> {
+            String[] time = alarm.split("-");
+            TodoEvent event = TodoEvent.fromEntity(saved, "create", time[0], time[1]);
+            if (time[0].equals("deadline")) {
+                eventProducer.sendDeadline(event);
+            } else {
+                eventProducer.sendReminder(event);
+            }
+        });
+        return TodoResponse.fromEntity(saved);
+    }
+
     @Transactional
     public TodoResponse updateTodo(Long userId, Long todoId, TodoUpdateRequest todoRequest) {
         Todo todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
@@ -99,6 +126,32 @@ public class TodoService {
         todo.updateStatus(todoRequest.getStatus());
         todo.changeActiveDate(todoRequest.getActiveFrom(), todoRequest.getActiveUntil());
 
+        return TodoResponse.fromEntity(todo);
+    }
+
+    @Transactional
+    public TodoResponse updateSchedule(Long userId, Long todoId, ScheduleUpdateRequest request) {
+        Todo todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
+        if (!todo.getUserId().equals(userId)) {
+            throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
+        }
+
+        todo.changeTitle(request.getTitle());
+        todo.changeType(request.getType());
+        todo.updateStatus(request.getStatus());
+        todo.changeActiveDate(request.getActiveFrom(), request.getActiveUntil());
+        eventProducer.sendDeadline(TodoEvent.fromEntity(todo, "delete-todo", "", ""));
+        eventProducer.sendReminder(TodoEvent.fromEntity(todo, "delete-todo", "", ""));
+        request.getAlarms().forEach(alarm -> {
+            String[] time = alarm.split("-");
+            if (time[0].equals("deadline")) {
+                TodoEvent event = TodoEvent.fromEntity(todo, "create", time[0], time[1]);
+                eventProducer.sendDeadline(event);
+            } else {
+                TodoEvent event = TodoEvent.fromEntity(todo, "create", time[0], time[1]);
+                eventProducer.sendReminder(event);
+            }
+        });
         return TodoResponse.fromEntity(todo);
     }
 
@@ -123,11 +176,17 @@ public class TodoService {
         if (!todo.getUserId().equals(userId)) {
             throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
         }
+        eventProducer.sendDeadline(TodoEvent.fromEntity(todo, "delete-todo",  "", ""));
         todoRepository.deleteById(todoId);
     }
 
     @Transactional
     public void deleteUser(Long userId) {
+        List<Todo> allByUserId = todoRepository.findAllByUserId(userId);
+        if (allByUserId.isEmpty()) {
+            return ;
+        }
+        eventProducer.sendDeadline(TodoEvent.fromEntity(allByUserId.get(0), "delete-user", "", ""));
         todoRepository.deleteAllByUserId(userId);
     }
 

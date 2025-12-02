@@ -7,14 +7,16 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Setter
 @Getter
 @NoArgsConstructor
-public class TodoUpdateRequest {
+public class ScheduleUpdateRequest {
     private String title;
     private TodoType type;
     private TodoStatus status = TodoStatus.PLANNED;
     private LocalDateTime activeFrom;
     private LocalDateTime activeUntil;
+    private List<String> alarms;
 }

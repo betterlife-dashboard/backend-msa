@@ -1,9 +1,6 @@
 package com.betterlife.todo.controller;
 
-import com.betterlife.todo.dto.RepeatTodoUpdateRequest;
-import com.betterlife.todo.dto.TodoRequest;
-import com.betterlife.todo.dto.TodoResponse;
-import com.betterlife.todo.dto.TodoUpdateRequest;
+import com.betterlife.todo.dto.*;
 import com.betterlife.todo.service.TodoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -49,15 +46,27 @@ public class TodoController {
         return ResponseEntity.ok(updated);
     }
 
+    @PatchMapping("/patch/schedule/{id}")
+    public ResponseEntity<TodoResponse> updateSchedule(@PathVariable("id") Long id, @RequestBody ScheduleUpdateRequest request, @RequestHeader("X-User-Id") Long userId) {
+        TodoResponse updated = todoService.updateSchedule(userId, id, request);
+        return ResponseEntity.ok(updated);
+    }
+
     @PatchMapping("/patch/repeat/{id}")
     public ResponseEntity<TodoResponse> updateRepeatTodo(@PathVariable("id") Long id, @RequestBody RepeatTodoUpdateRequest request, @RequestHeader("X-User-Id") Long userId) {
         TodoResponse updated = todoService.updateRepeatTodo(userId, id, request);
         return ResponseEntity.ok(updated);
     }
 
-    @PostMapping("/create")
+    @PostMapping("/create/general")
     public ResponseEntity<TodoResponse> createTodo(@RequestBody TodoRequest todoRequest, @RequestHeader("X-User-Id") Long userId) {
         TodoResponse todoResponse = todoService.createTodo(userId, todoRequest);
+        return ResponseEntity.ok(todoResponse);
+    }
+
+    @PostMapping("/create/schedule")
+    public ResponseEntity<TodoResponse> createSchedule(@RequestBody ScheduleRequest scheduleRequest, @RequestHeader("X-User-Id") Long userId) {
+        TodoResponse todoResponse = todoService.createSchedule(userId, scheduleRequest);
         return ResponseEntity.ok(todoResponse);
     }
 
