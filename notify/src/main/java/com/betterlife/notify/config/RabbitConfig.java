@@ -34,10 +34,15 @@ public class RabbitConfig {
     }
 
     @Bean
+    public DirectExchange todoExchange() {
+        return new DirectExchange(todoExchangeName);
+    }
+
+    @Bean
     public Binding todoDeadlineBinding() {
         return BindingBuilder
                 .bind(todoDeadlineQueue())
-                .to(new DirectExchange(todoExchangeName))
+                .to(todoExchange())
                 .with(todoDeadlineKey);
     }
 
@@ -50,7 +55,7 @@ public class RabbitConfig {
     public Binding todoReminderBinding() {
         return BindingBuilder
                 .bind(todoReminderQueue())
-                .to(new DirectExchange(todoExchangeName))
+                .to(todoExchange())
                 .with(todoReminderKey);
     }
 }
