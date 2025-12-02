@@ -27,17 +27,6 @@ public class TodoEvent {
         } else {
             time = todo.getActiveUntil();
         }
-        if (eventType.equals("create")) {
-            if (deadline.equals("1h")) {
-                time = time.plusHours(1);
-            } else if (deadline.equals("1d")) {
-                time = time.plusDays(1);
-            } else if (deadline.equals("3d")) {
-                time = time.plusDays(3);
-            } else if (deadline.equals("1w")) {
-                time = time.plusWeeks(1);
-            }
-        }
         deadlineEvent.deadline = time.toString();
         return deadlineEvent;
     }

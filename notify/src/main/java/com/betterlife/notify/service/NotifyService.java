@@ -30,9 +30,13 @@ public class NotifyService {
     private final NotificationTemplateRepository notificationTemplateRepository;
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일 a h:mm");
 
+    @Transactional
     public List<NotifyResponse> getNotificationsNow(Long userId) {
-        List<Notification> notifications = notificationRepository.findAllByUserId(userId);
-        return new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+        List<Notification> notifications = notificationRepository.findAllByUserIdAndSendAtBeforeAndIsRead(userId, now, false);
+
+        notifications.forEach(Notification::read);
+        return notifications.stream().map(NotifyResponse::fromEntity).toList();
     }
 
     public TodoNotifyDetailResponse getNotificationByTodoId(Long userId, Long todoId) {
@@ -57,10 +61,22 @@ public class NotifyService {
                 Map.of("title", event.getTitle())
         );
         String remainTime = "";
-        if (event.getRemainTime().equals("1h")) remainTime = "1시간";
-        else if (event.getRemainTime().equals("1d")) remainTime = "1일";
-        else if (event.getRemainTime().equals("3d")) remainTime = "3일";
-        else if (event.getRemainTime().equals("1w")) remainTime = "1주";
+        if (event.getRemainTime().equals("1h")) {
+            remainTime = "1시간";
+            deadline = deadline.minusHours(1);
+        }
+        else if (event.getRemainTime().equals("1d")) {
+            remainTime = "1일";
+            deadline = deadline.minusDays(1);
+        }
+        else if (event.getRemainTime().equals("3d")) {
+            remainTime = "3일";
+            deadline = deadline.minusDays(3);
+        }
+        else if (event.getRemainTime().equals("1w")) {
+            remainTime = "1주";
+            deadline = deadline.minusDays(3);
+        }
         String body = render(
                 nt.getBodyTemplate(),
                 Map.of(
@@ -100,10 +116,22 @@ public class NotifyService {
                 Map.of("title", event.getTitle())
         );
         String remainTime = "";
-        if (event.getRemainTime().equals("1h")) remainTime = "1시간";
-        else if (event.getRemainTime().equals("1d")) remainTime = "1일";
-        else if (event.getRemainTime().equals("3d")) remainTime = "3일";
-        else if (event.getRemainTime().equals("1w")) remainTime = "1주";
+        if (event.getRemainTime().equals("1h")) {
+            remainTime = "1시간";
+            deadline = deadline.minusHours(1);
+        }
+        else if (event.getRemainTime().equals("1d")) {
+            remainTime = "1일";
+            deadline = deadline.minusDays(1);
+        }
+        else if (event.getRemainTime().equals("3d")) {
+            remainTime = "3일";
+            deadline = deadline.minusDays(3);
+        }
+        else if (event.getRemainTime().equals("1w")) {
+            remainTime = "1주";
+            deadline = deadline.minusDays(3);
+        }
         String body = render(
                 nt.getBodyTemplate(),
                 Map.of(

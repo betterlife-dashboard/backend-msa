@@ -58,6 +58,11 @@ public class Notification {
     @Column(name = "read_at")
     private Timestamp readAt;
 
+    public void read() {
+        this.isRead = true;
+        this.readAt = Timestamp.valueOf(LocalDateTime.now());
+    }
+
     @Builder
     public Notification(
             Long userId,

@@ -96,6 +96,10 @@ services:
       TODO_DATASOURCE_USERNAME: root
       TODO_DATASOURCE_PASSWORD: root
       AUTH_SERVICE_URL: http://auth:8081
+      RABBIT_URL: rabbit
+      RABBIT_PORT: 5672
+      RABBIT_USERNAME: admin
+      RABBIT_PASSWORD: admin
       # Hikari가 DB 준비전 실패하지 않게(0 = fail-fast 끔)
       SPRING_DATASOURCE_HIKARI_INITIALIZATIONFAILTIMEOUT: "0"
     ports:
@@ -109,9 +113,13 @@ services:
     build: ./notify
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      TODO_DATASOURCE_URL: jdbc:mysql://mysql-notify:3306/notify_db
+      NOTIFY_DATASOURCE_URL: jdbc:mysql://mysql-notify:3306/notify_db
       NOTIFY_DATASOURCE_USERNAME: root
       NOTIFY_DATASOURCE_PASSWORD: root
+      RABBIT_URL: rabbit
+      RABBIT_PORT: 5672
+      RABBIT_USERNAME: admin
+      RABBIT_PASSWORD: admin
       # Hikari가 DB 준비전 실패하지 않게(0 = fail-fast 끔)
       SPRING_DATASOURCE_HIKARI_INITIALIZATIONFAILTIMEOUT: "0"
     ports:
