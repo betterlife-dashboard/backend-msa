@@ -1,4 +1,4 @@
-name: Deploy gateway Services to AWS EC2
+name: Deploy gateway Services to HomeServer
 
 on:
   push:
@@ -14,9 +14,9 @@ permissions:
 env:
   DOCKERHUB_NAMESPACE: shinhs6384
   IMAGE_TAG: ${{ github.sha }}
-  EC2_HOST: ${{ secrets.EC2_HOST }}
-  EC2_USER: ${{ secrets.EC2_USER }}
-  EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+  HOME_HOST: ${{ secrets.HOME_HOST }}
+  HOME_USER: ${{ secrets.HOME_USER }}
+  HOME_PASSWORD: ${{ secrets.HOME_PASSWORD }}
 
 jobs:
   build-and-push:
@@ -29,10 +29,15 @@ jobs:
       - name: Cache Gradle packages
         uses: actions/cache@v3
         with:
+          # 캐시할 디렉토리들 (~/.gradle)
+          # 의존성, wrapper, 빌드 캐시들이 저장됨
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
+          # 캐시 key: 운영체제 + gradle 파일 변경 hash
+          # gradle 설정 파일이 변경되면 캐시 갱신됨
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          # gradle 파일이 수정되면 기존 캐시와 유사한 key 사용하여 점진적 복원
           restore-keys: |
             ${{ runner.os }}-gradle-
 
@@ -56,17 +61,18 @@ jobs:
           docker push ${{ env.DOCKERHUB_NAMESPACE }}/gateway:latest
 
   deploy:
-    name: Deploy to EC2
+    name: Deploy to HomeServer
     runs-on: ubuntu-latest
     needs: build-and-push
     steps:
-      - name: SSH into EC2 and run deploy
+      - name: SSH into HomeServer and run deploy
         uses: appleboy/ssh-action@v0.1.8
         with:
-          host: ${{ env.EC2_HOST }}
-          username: ${{ env.EC2_USER }}
-          key: ${{ env.EC2_SSH_KEY }}
+          host: ${{ env.HOME_HOST }}
+          port: 4242
+          username: ${{ env.HOME_USER }}
+          password: ${{ env.HOME_PASSWORD }}
           script: |
-            cd /home/ubuntu/app
-            docker compose -f docker-compose.prod.yml pull gateway
-            docker compose -f docker-compose.prod.yml up -d gateway
+            cd /home/hyeongsh/betterlife
+            docker compose -p betterlife -f docker-compose.service.yml pull gateway
+            docker compose -p betterlife -f docker-compose.service.yml up -d gateway
