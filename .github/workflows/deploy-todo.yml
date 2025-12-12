@@ -69,9 +69,10 @@ jobs:
         uses: appleboy/ssh-action@v0.1.8
         with:
           host: ${{ env.HOME_HOST }}
+          port: 4242
           username: ${{ env.HOME_USER }}
           password: ${{ env.HOME_PASSWORD }}
           script: |
             cd /home/hyeongsh/betterlife
-            docker compose -f docker-compose.service.yml pull todo
-            docker compose -f docker-compose.service.yml up -d todo
+            docker compose -p betterlife -f docker-compose.service.yml pull todo
+            docker compose -p betterlife -f docker-compose.service.yml up -d todo
