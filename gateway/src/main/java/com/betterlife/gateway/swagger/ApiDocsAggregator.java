@@ -26,8 +26,12 @@ public class ApiDocsAggregator {
                 .map(s -> webClient.get()
                         .uri(s.getUrl() + "/v3/api-docs")
                         .retrieve()
-                        .bodyToMono(String.class))
-                .toList();
+                        .bodyToMono(String.class)
+                        .onErrorResume(ex -> {
+                            System.out.println("Failed to fetch docs from " + s.getUrl() + ": " + ex.toString());
+                            return Mono.just("{}");
+                        })
+                ).toList();
 
         return Mono.zip(monos, results -> {
             List<String> docs = Arrays.stream(results)

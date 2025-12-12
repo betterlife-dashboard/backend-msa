@@ -6,6 +6,8 @@ openapi:
       url: http://localhost:8082
     - name: notify
       url: http://localhost:8083
+    - name: focus
+      url: http://localhost:8084
 
 auth:
   service:
@@ -18,6 +20,10 @@ todo:
 notify:
   service:
     url: http://localhost:8083
+
+focus:
+  service:
+    url: http://localhost:8084
 
 frontend:
   url: http://localhost:5173

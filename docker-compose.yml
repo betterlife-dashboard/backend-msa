@@ -169,12 +169,15 @@ services:
       AUTH_SERVICE_URL: http://auth:8081
       TODO_SERVICE_URL: http://todo:8082
       NOTIFY_SERVICE_URL: http://notify:8083
+      FOCUS_SERVICE_URL: http://focus:8083
       OPENAPI_SERVICES_0_NAME: auth
       OPENAPI_SERVICES_0_URL: http://auth:8081
       OPENAPI_SERVICES_1_NAME: todo
       OPENAPI_SERVICES_1_URL: http://todo:8082
       OPENAPI_SERVICES_2_NAME: notify
       OPENAPI_SERVICES_2_URL: http://notify:8083
+      OPENAPI_SERVICES_3_NAME: focus
+      OPENAPI_SERVICES_3_URL: http://focus:8084
       FRONTEND_URL: http://localhost:5173
       JWT_SECRET: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing
     ports:
