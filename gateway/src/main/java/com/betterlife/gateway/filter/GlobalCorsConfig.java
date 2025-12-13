@@ -17,6 +17,8 @@ public class GlobalCorsConfig {
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOrigin(frontendUrl);
+        config.addAllowedOrigin("api.betterlifeboard.com");
+        config.addAllowedOrigin("api.betterlife.betterlifeboard.com");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.setAllowCredentials(true);
