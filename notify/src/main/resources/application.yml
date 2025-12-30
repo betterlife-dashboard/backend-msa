@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: notify
+  data:
+    redis:
+      host: ${NOTIFY_REDIS_HOST}
+      port: ${NOTIFY_REDIS_PORT}
   datasource:
     url: ${NOTIFY_DATASOURCE_URL}
     username: ${NOTIFY_DATASOURCE_USERNAME}
@@ -16,16 +20,24 @@ spring:
 
 rabbit:
   exchanges:
-    auth: "auth.exchange"
-    todo: "todo.exchange"
-  deadline:
-    queue:
-      name: "todo.deadline.queue"
-      key: "todo.deadline.key"
-  reminder:
-    queue:
-      name: "todo.reminder.queue"
-      key: "todo.reminder.key"
+      notify: "notify.event"
+      dead: "notify.dead.event"
+  queue:
+    schedule:
+      created:
+        name: "schedule.created.queue"
+        key: "schedule.created.key"
+      deleted:
+        name: "schedule.deleted.queue"
+        key: "schedule.deleted.key"
+    user:
+      deleted:
+        name: "user.deleted.queue"
+        key: "user.deleted.key"
+    notify:
+      dead:
+        name: "notify.dead.queue"
+        key: "notify.dead.key"
 
 springdoc:
   api-docs:

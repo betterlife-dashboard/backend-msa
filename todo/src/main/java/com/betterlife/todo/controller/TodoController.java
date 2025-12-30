@@ -1,6 +1,7 @@
 package com.betterlife.todo.controller;
 
 import com.betterlife.todo.dto.*;
+import com.betterlife.todo.service.ScheduleService;
 import com.betterlife.todo.service.TodoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import java.util.List;
 public class TodoController {
 
     private final TodoService todoService;
+    private final ScheduleService scheduleService;
 
     @GetMapping("/{date}")
     public ResponseEntity<List<TodoResponse>> getTodosByDate(@PathVariable("date") LocalDate date, @RequestHeader("X-User-Id") Long userId) {
@@ -48,7 +50,7 @@ public class TodoController {
 
     @PatchMapping("/patch/schedule/{id}")
     public ResponseEntity<TodoResponse> updateSchedule(@PathVariable("id") Long id, @RequestBody ScheduleUpdateRequest request, @RequestHeader("X-User-Id") Long userId) {
-        TodoResponse updated = todoService.updateSchedule(userId, id, request);
+        TodoResponse updated = scheduleService.updateSchedule(userId, id, request);
         return ResponseEntity.ok(updated);
     }
 
@@ -66,19 +68,13 @@ public class TodoController {
 
     @PostMapping("/create/schedule")
     public ResponseEntity<TodoResponse> createSchedule(@RequestBody ScheduleRequest scheduleRequest, @RequestHeader("X-User-Id") Long userId) {
-        TodoResponse todoResponse = todoService.createSchedule(userId, scheduleRequest);
+        TodoResponse todoResponse = scheduleService.createSchedule(userId, scheduleRequest);
         return ResponseEntity.ok(todoResponse);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTodo(@PathVariable("id") Long id, @RequestHeader("X-User-Id") Long userId) {
         todoService.deleteTodo(userId, id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @DeleteMapping("/user")
-    public ResponseEntity<Void> deleteUser(@RequestHeader("X-User-Id") Long userId) {
-        todoService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
 

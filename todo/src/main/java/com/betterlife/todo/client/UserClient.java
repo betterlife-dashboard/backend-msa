@@ -5,8 +5,6 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
@@ -20,7 +18,7 @@ public class UserClient {
     @Value("${auth.service.url}")
     private String authServiceUrl;
 
-    public UserResponse getUser(Long userId) {
+    public void getUser(Long userId) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-User-Id", userId.toString());
@@ -31,7 +29,7 @@ public class UserClient {
                     entity,
                     UserResponse.class
             );
-            return response.getBody();
+            response.getBody();
         } catch (HttpClientErrorException e) {
             if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
                 throw new EntityNotFoundException("존재하지 않는 유저입니다.");

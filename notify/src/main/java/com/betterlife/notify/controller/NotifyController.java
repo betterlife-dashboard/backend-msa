@@ -1,7 +1,10 @@
 package com.betterlife.notify.controller;
 
-import com.betterlife.notify.dto.NotifyResponse;
-import com.betterlife.notify.dto.TodoNotifyDetailResponse;
+import com.betterlife.notify.domain.FcmToken;
+import com.betterlife.notify.dto.FcmTokenRequest;
+import com.betterlife.notify.dto.FcmTokenResponse;
+import com.betterlife.notify.dto.WebNotify;
+import com.betterlife.notify.service.FcmService;
 import com.betterlife.notify.service.NotifyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,14 +18,25 @@ import java.util.List;
 public class NotifyController {
 
     private final NotifyService notifyService;
+    private final FcmService fcmService;
 
-    @GetMapping("/{todoId}")
-    public ResponseEntity<TodoNotifyDetailResponse> getNotifyByTodoId(@PathVariable("todoId") Long todoId, @RequestHeader("X-User-Id") Long userId) {
-        return ResponseEntity.ok(notifyService.getNotificationByTodoId(userId, todoId));
+    @GetMapping("")
+    public ResponseEntity<List<WebNotify>> getNotifies(
+            @RequestParam("todo-id") Long todoId
+    ) {
+        return ResponseEntity.ok(notifyService.getNotifies(todoId));
     }
 
-    @GetMapping("/now")
-    public ResponseEntity<List<NotifyResponse>> getNotifyNow(@RequestHeader("X-User-Id") Long userId) {
-        return ResponseEntity.ok(notifyService.getNotificationsNow(userId));
+    @GetMapping("/token")
+    public ResponseEntity<FcmTokenResponse> getFcmToken(
+            @RequestParam("device-type") String deviceType,
+            @RequestParam("browser-type") String browserType,
+            @RequestHeader("X-User-Id") Long id) {
+        return ResponseEntity.ok(fcmService.getFcmToken(id, deviceType, browserType));
+    }
+
+    @PostMapping("/token")
+    public ResponseEntity<FcmTokenResponse> refreshFcmToken(@RequestBody FcmTokenRequest request, @RequestHeader("X-User-Id") Long id) {
+        return ResponseEntity.ok(fcmService.saveFcmToken(id, request));
     }
 }

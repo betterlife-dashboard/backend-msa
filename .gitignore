@@ -1,3 +1,4 @@
 .idea/
 deploy/
 .DS_Store
+notify/src/main/resources/firebase/*.json

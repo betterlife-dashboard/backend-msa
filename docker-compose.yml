@@ -86,7 +86,6 @@ services:
       AUTH_DATASOURCE_USERNAME: root
       AUTH_DATASOURCE_PASSWORD: root
       TODO_SERVICE_URL: http://todo:8082
-      # Redis (반드시 서비스명 지정)
       AUTH_REDIS_HOST: redis
       AUTH_REDIS_PORT: 6379
       # Hikari가 DB 준비전 실패하지 않게(0 = fail-fast 끔)
@@ -133,6 +132,8 @@ services:
       RABBIT_PORT: 5672
       RABBIT_USERNAME: admin
       RABBIT_PASSWORD: admin
+      NOTIFY_REDIS_HOST: redis
+      NOTIFY_REDIS_PORT: 6379
       # Hikari가 DB 준비전 실패하지 않게(0 = fail-fast 끔)
       SPRING_DATASOURCE_HIKARI_INITIALIZATIONFAILTIMEOUT: "0"
     ports:
@@ -158,7 +159,7 @@ services:
     ports:
       - "8084:8084"
     depends_on:
-      mysql-notify:
+      mysql-focus:
         condition: service_healthy
     restart: on-failure
 

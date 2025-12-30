@@ -27,16 +27,20 @@ springdoc:
 
 rabbit:
   exchanges:
-    auth: "auth.exchange"
-    todo: "todo.exchange"
-  deadline:
-    queue:
-      name: "todo.deadline.queue"
-      key: "todo.deadline.key"
-  reminder:
-    queue:
-      name: "todo.reminder.queue"
-      key: "todo.reminder.key"
+    notify: "notify.event"
+    dead: "notify.dead.event"
+  queue:
+    schedule:
+      created:
+        key: "schedule.created.key"
+      deleted:
+        key: "schedule.deleted.key"
+    user:
+      deleted:
+        key: "user.deleted.key"
+    notify:
+      dead:
+        key: "notify.dead.key"
 
 management:
   endpoints:

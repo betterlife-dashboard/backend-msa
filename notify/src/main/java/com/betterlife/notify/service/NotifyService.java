@@ -1,129 +1,111 @@
 package com.betterlife.notify.service;
 
-import com.betterlife.notify.domain.Notification;
-import com.betterlife.notify.domain.NotificationTemplate;
-import com.betterlife.notify.dto.NotifyResponse;
-import com.betterlife.notify.dto.TodoNotifyDetailResponse;
-import com.betterlife.notify.enums.ChannelType;
-import com.betterlife.notify.enums.EventType;
-import com.betterlife.notify.enums.Lang;
-import com.betterlife.notify.event.TodoEvent;
-import com.betterlife.notify.repository.NotificationChannelRepository;
-import com.betterlife.notify.repository.NotificationRepository;
-import com.betterlife.notify.repository.NotificationTemplateRepository;
+import com.betterlife.notify.dto.WebNotify;
+import com.betterlife.notify.enums.NotifyType;
+import com.betterlife.notify.enums.RemainTimeRule;
+import com.betterlife.notify.event.ScheduleCreatedEvent;
+import com.betterlife.notify.event.ScheduleDeletedEvent;
+import com.betterlife.notify.event.UserDeletedEvent;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.ZoneId;
+import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotifyService {
 
-    private final NotificationRepository notificationRepository;
-    private final NotificationChannelRepository notificationChannelRepository;
-    private final NotificationTemplateRepository notificationTemplateRepository;
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 M월 d일 a h:mm");
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
+    private static final String QUEUE_KEY = "notify:schedule";
+    private static final String TODO_INDEX_KEY = "notify:index:todo:";
+    private static final String USER_INDEX_KEY = "notify:index:user:";
 
-    @Transactional
-    public List<NotifyResponse> getNotificationsNow(Long userId) {
-        LocalDateTime now = LocalDateTime.now();
-        List<Notification> notifications = notificationRepository.findAllByUserIdAndSendAtBeforeAndIsRead(userId, now, false);
+    public void createScheduleNotify(ScheduleCreatedEvent event) {
+        WebNotify webNotify = toScheduleNotify(event);
+        try {
+            String notifyId = UUID.randomUUID().toString();
+            String key = "notify:" + notifyId;
+            String json = objectMapper.writeValueAsString(webNotify);
+            long score = webNotify.getSendAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 
-        notifications.forEach(Notification::read);
-        return notifications.stream().map(NotifyResponse::fromEntity).toList();
-    }
-
-    public TodoNotifyDetailResponse getNotificationByTodoId(Long userId, Long todoId) {
-        List<Notification> notifications = notificationRepository.findAllByUserIdAndTodoId(userId, todoId);
-        TodoNotifyDetailResponse todoNotifyDetailResponse = new TodoNotifyDetailResponse();
-        notifications.forEach(notification -> {
-            todoNotifyDetailResponse.addAlarm(notification.getEventType(), notification.getRemainTime());
-        });
-        return todoNotifyDetailResponse;
-    }
-
-    public List<Notification> getNotificationById(Long todoId) {
-        return notificationRepository.findAllByTodoId(todoId);
-    }
-
-    public void createDeadlineNotification(TodoEvent event) {
-        NotificationTemplate nt = notificationTemplateRepository.findByEventTypeAndChannelTypeAndLang(EventType.SCHEDULE_DEADLINE, ChannelType.WEB, Lang.KO)
-                        .orElseThrow(() -> new RuntimeException("해당 템플릿을 찾을 수 없습니다."));
-        Notification notification = toNotification(event, nt, EventType.SCHEDULE_DEADLINE);
-        notificationRepository.save(notification);
-    }
-
-    @Transactional
-    public void deleteTodoNotification(TodoEvent event) {
-        notificationRepository.deleteNotificationByTodoId(event.getTodoId());
-    }
-
-    @Transactional
-    public void deleteUserNotification(TodoEvent event) {
-        notificationRepository.deleteNotificationByUserId(event.getTodoId());
-    }
-
-    public void createReminderNotification(TodoEvent event) {
-        NotificationTemplate nt = notificationTemplateRepository.findByEventTypeAndChannelTypeAndLang(EventType.SCHEDULE_REMINDER, ChannelType.WEB, Lang.KO)
-                .orElseThrow(() -> new RuntimeException("해당 템플릿을 찾을 수 없습니다."));
-        Notification notification = toNotification(event, nt, EventType.SCHEDULE_REMINDER);
-        notificationRepository.save(notification);
-    }
-
-    private String render(String template, Map<String, String> values) {
-        String result = template;
-        for (Map.Entry<String, String> entry : values.entrySet()) {
-            String placeholder = "{" + entry.getKey() + "}";
-            result = result.replace(placeholder, entry.getValue());
+            redisTemplate.opsForValue().set(key, json);
+            redisTemplate.opsForZSet().add(QUEUE_KEY, notifyId, score);
+            redisTemplate.opsForSet().add(TODO_INDEX_KEY + webNotify.getTodoId(), notifyId);
+            redisTemplate.opsForSet().add(USER_INDEX_KEY + webNotify.getUserId(), notifyId);
+        } catch (Exception e) {
+            throw new RuntimeException("Redis 저장 실패", e);
         }
-        return result;
     }
 
-    private Notification toNotification(TodoEvent event, NotificationTemplate nt, EventType eventType) {
-        LocalDateTime deadline = LocalDateTime.parse(event.getDeadline());
-        String title = render(
-                nt.getTitleTemplate(),
+    private WebNotify toScheduleNotify(ScheduleCreatedEvent event) {
+        NotifyType notifyType = NotifyType.from(event.getStandard());
+        RemainTimeRule rule = RemainTimeRule.fromCode(event.getRemainTime());
+        String remainTime = rule.getLabel();
+        LocalDateTime sendAt = rule.apply(LocalDateTime.parse(event.getDeadlineTime()));
+        String title = notifyType.renderTitle(
                 Map.of("title", event.getTitle())
         );
-        String remainTime = "";
-        if (event.getRemainTime().equals("1h")) {
-            remainTime = "1시간";
-            deadline = deadline.minusHours(1);
-        }
-        else if (event.getRemainTime().equals("1d")) {
-            remainTime = "1일";
-            deadline = deadline.minusDays(1);
-        }
-        else if (event.getRemainTime().equals("3d")) {
-            remainTime = "3일";
-            deadline = deadline.minusDays(3);
-        }
-        else if (event.getRemainTime().equals("1w")) {
-            remainTime = "1주";
-            deadline = deadline.minusWeeks(1);
-        }
-        String body = render(
-                nt.getBodyTemplate(),
+        String body = notifyType.renderBody(
                 Map.of(
                         "title", event.getTitle(),
-                        "deadline", deadline.format(formatter),
                         "timeLeft", remainTime
                 )
         );
-        return Notification.builder()
+        return WebNotify.builder()
                 .userId(event.getUserId())
-                .todoId(event.getTodoId())
-                .eventType(eventType)
-                .remainTime(event.getRemainTime())
+                .notifyType(notifyType)
                 .title(title)
                 .body(body)
-                .sendAt(deadline)
+                .sendAt(sendAt)
+                .todoId(event.getTodoId())
+                .remainTime(event.getRemainTime())
+                .link("https://www.betterlife.betterlifeboard.com")
                 .build();
+    }
+
+    public List<WebNotify> getNotifies(Long todoId) {
+        Set<String> notifyIds = redisTemplate.opsForSet().members(TODO_INDEX_KEY + todoId);
+
+        if (notifyIds == null || notifyIds.isEmpty()) {
+            return List.of();
+        }
+
+
+        return notifyIds.stream().map(notifyId -> {
+            String json = redisTemplate.opsForValue().get("notify:" + notifyId);
+            return objectMapper.readValue(json, WebNotify.class);
+        }).toList();
+    }
+
+    public void deleteScheduleNotify(ScheduleDeletedEvent event) {
+        Set<String> notifyIds = redisTemplate.opsForSet().members(TODO_INDEX_KEY + event.getTodoId());
+        if (notifyIds == null) {
+            return ;
+        }
+        for (String notifyId : notifyIds) {
+            redisTemplate.opsForZSet().remove(QUEUE_KEY, notifyId);
+            redisTemplate.opsForSet().remove(USER_INDEX_KEY + event.getUserId(), notifyId);
+            redisTemplate.delete("notify:" + notifyId);
+        }
+        redisTemplate.delete(TODO_INDEX_KEY + event.getTodoId());
+    }
+
+    public void deleteUserNotify(UserDeletedEvent event) {
+        Set<String> notifyIds = redisTemplate.opsForSet().members(USER_INDEX_KEY + event.getUserId());
+        if (notifyIds == null) {
+            return ;
+        }
+        for (String notifyId : notifyIds) {
+            redisTemplate.opsForZSet().remove(QUEUE_KEY, notifyId);
+            redisTemplate.delete("notify:" + notifyId);
+        }
+        redisTemplate.delete(USER_INDEX_KEY + event.getUserId());
     }
 }
