@@ -1,4 +1,16 @@
 spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        auto-startup: false
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
@@ -14,3 +26,23 @@ spring:
   flyway:
     enabled: false
 
+rabbit:
+  exchanges:
+    notify: "test.notify"
+    dead: "test.dead"
+  queue:
+    schedule:
+      created:
+        name: "test.schedule.created.queue"
+        key: "test.schedule.created.key"
+      deleted:
+        name: "test.schedule.deleted.queue"
+        key: "test.schedule.deleted.key"
+    user:
+      deleted:
+        name: "test.user.deleted.queue"
+        key: "test.user.deleted.key"
+    notify:
+      dead:
+        name: "test.notify.dead.queue"
+        key: "test.notify.dead.key"
