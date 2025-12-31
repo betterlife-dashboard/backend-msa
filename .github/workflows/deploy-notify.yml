@@ -53,7 +53,7 @@ jobs:
           password: ${{ env.HOME_PASSWORD }}
           script: |
             mkdir -p /home/hyeongsh/betterlife/config
-            printf '%s' "${{ secrets.FIREBASE_KEY }}" > /home/hyeongsh/betterlife/config/firebase.json
+            echo "${{ secrets.FIREBASE_KEY }}" | base64 -d > /home/hyeongsh/betterlife/config/firebase.json
             chmod 600 /home/hyeongsh/betterlife/config/firebase.json
       
       - name: SSH into HomeServer and run deploy
