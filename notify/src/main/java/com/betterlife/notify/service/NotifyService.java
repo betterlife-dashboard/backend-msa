@@ -3,6 +3,7 @@ package com.betterlife.notify.service;
 import com.betterlife.notify.dto.WebNotify;
 import com.betterlife.notify.enums.NotifyType;
 import com.betterlife.notify.enums.RemainTimeRule;
+import com.betterlife.notify.exception.RedisOperationException;
 import com.betterlife.notify.event.ScheduleCreatedEvent;
 import com.betterlife.notify.event.ScheduleDeletedEvent;
 import com.betterlife.notify.event.UserDeletedEvent;
@@ -40,7 +41,7 @@ public class NotifyService {
             redisTemplate.opsForSet().add(TODO_INDEX_KEY + webNotify.getTodoId(), notifyId);
             redisTemplate.opsForSet().add(USER_INDEX_KEY + webNotify.getUserId(), notifyId);
         } catch (Exception e) {
-            throw new RuntimeException("Redis 저장 실패", e);
+            throw new RedisOperationException("Redis 저장 실패", e);
         }
     }
 

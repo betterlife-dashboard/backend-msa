@@ -7,6 +7,8 @@ import lombok.*;
 @NoArgsConstructor
 @ToString
 @EqualsAndHashCode
+@AllArgsConstructor
+@Builder
 public class FcmTokenRequest {
     private String deviceType;
     private String browserType;

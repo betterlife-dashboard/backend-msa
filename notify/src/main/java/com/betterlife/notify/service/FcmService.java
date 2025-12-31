@@ -6,9 +6,12 @@ import com.betterlife.notify.dto.FcmTokenResponse;
 import com.betterlife.notify.dto.WebMessageDto;
 import com.betterlife.notify.dto.WebNotify;
 import com.betterlife.notify.enums.DeviceType;
+import com.betterlife.notify.exception.DuplicateFcmTokenException;
+import com.betterlife.notify.exception.FcmSendFailedException;
+import com.betterlife.notify.exception.FcmTokenDisabledException;
+import com.betterlife.notify.exception.FcmTokenNotFoundException;
 import com.betterlife.notify.repository.FcmTokenRepository;
 import com.google.auth.oauth2.GoogleCredentials;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -21,6 +24,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
@@ -39,21 +43,34 @@ public class FcmService {
 
     public FcmTokenResponse getFcmToken(Long id, String deviceType, String browserType) {
         FcmToken fcmToken = fcmTokenRepository.findByUserIdAndDeviceTypeAndBrowserType(id, DeviceType.fromString(deviceType), browserType)
-                .orElseThrow(() -> new EntityNotFoundException("해당 채널용 FCM 토큰이 아직 발급되지 않았습니다."));
+                .orElseThrow(() -> new FcmTokenNotFoundException("해당 채널용 FCM 토큰이 아직 발급되지 않았습니다."));
+        if (!fcmToken.getEnabled()) {
+            throw new FcmTokenDisabledException("해당 토큰이 비활성화된 상태입니다.");
+        }
         return FcmTokenResponse.fromEntity(fcmToken);
     }
 
     public FcmTokenResponse saveFcmToken(Long id, FcmTokenRequest fcmTokenRequest) {
-        FcmToken fcmToken = FcmToken.builder()
-                .userId(id)
-                .token(fcmTokenRequest.getToken())
-                .deviceType(DeviceType.fromString(fcmTokenRequest.getDeviceType()))
-                .browserType(fcmTokenRequest.getBrowserType())
-                .updatedAt(LocalDate.now())
-                .enabled(true)
-                .build();
-        FcmToken saved = fcmTokenRepository.save(fcmToken);
-        return FcmTokenResponse.fromEntity(saved);
+        Optional<FcmToken> tokenOptional = fcmTokenRepository.findByUserIdAndDeviceTypeAndBrowserType(id, DeviceType.fromString(fcmTokenRequest.getDeviceType()), fcmTokenRequest.getBrowserType());
+        if (tokenOptional.isPresent() && tokenOptional.get().getEnabled()) {
+            throw new DuplicateFcmTokenException("이미 해당 브라우저에 대한 토큰이 발급되었습니다.");
+        } else if (tokenOptional.isPresent()) {
+            FcmToken fcmToken = tokenOptional.get();
+            fcmToken.updateToken(fcmTokenRequest.getToken());
+            FcmToken saved = fcmTokenRepository.save(fcmToken);
+            return FcmTokenResponse.fromEntity(saved);
+        } else {
+            FcmToken fcmToken = FcmToken.builder()
+                    .userId(id)
+                    .token(fcmTokenRequest.getToken())
+                    .deviceType(DeviceType.fromString(fcmTokenRequest.getDeviceType()))
+                    .browserType(fcmTokenRequest.getBrowserType())
+                    .updatedAt(LocalDate.now())
+                    .enabled(true)
+                    .build();
+            FcmToken saved = fcmTokenRepository.save(fcmToken);
+            return FcmTokenResponse.fromEntity(saved);
+        }
     }
 
     public void popDueNotify() throws Exception {
@@ -99,7 +116,7 @@ public class FcmService {
             try {
                 ResponseEntity<String> response = restTemplate.exchange(API_URL, HttpMethod.POST, entity, String.class);
                 if (!response.getStatusCode().is2xxSuccessful()) {
-                    throw new IllegalStateException("FCM 전송 실패: " + response.getStatusCode());
+                    throw new FcmSendFailedException("FCM 전송 실패: " + response.getStatusCode());
                 }
             } catch (RestClientResponseException ex) {
                 String body = ex.getResponseBodyAsString();
@@ -109,7 +126,7 @@ public class FcmService {
                     log.warn("FCM 토큰 비활성화 처리: {}", fcmToken.getToken());
                     continue;
                 }
-                throw ex;
+                throw new FcmSendFailedException("FCM 전송 실패: " + ex.getStatusCode(), ex);
             }
         }
     }

@@ -1,6 +1,8 @@
 package com.betterlife.notify.service;
 
 import com.betterlife.notify.domain.FcmToken;
+import com.betterlife.notify.dto.FcmTokenRequest;
+import com.betterlife.notify.dto.FcmTokenResponse;
 import com.betterlife.notify.dto.WebNotify;
 import com.betterlife.notify.enums.DeviceType;
 import com.betterlife.notify.enums.NotifyType;
@@ -27,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -108,5 +111,24 @@ public class FcmServiceTest {
 
         assertThat(fcmToken.getEnabled()).isFalse();
         verify(fcmTokenRepository).save(fcmToken);
+    }
+
+    @Test
+    public void saveFcmToken_DuplicateError() {
+        FcmToken fcmToken = FcmToken.builder()
+                .userId(3L)
+                .token("123456789")
+                .deviceType(DeviceType.WEB)
+                .browserType("chrome")
+                .updatedAt(LocalDate.now())
+                .enabled(true)
+                .build();
+        when(fcmTokenRepository.findByUserIdAndDeviceTypeAndBrowserType(3L, DeviceType.WEB, "chrome")).thenReturn(Optional.of(fcmToken));
+        FcmTokenRequest fcmTokenRequest = FcmTokenRequest.builder()
+                .deviceType("WEB")
+                .browserType("chrome")
+                .token("123456789")
+                .build();
+        fcmService.saveFcmToken(3L, fcmTokenRequest);
     }
 }

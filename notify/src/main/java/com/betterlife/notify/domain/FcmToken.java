@@ -49,6 +49,12 @@ public class FcmToken {
         this.enabled = enabled;
     }
 
+    public void updateToken(String token) {
+        this.token = token;
+        this.updatedAt = LocalDate.now();
+        this.enabled = true;
+    }
+
     public void disable() {
         this.enabled = false;
         this.updatedAt = LocalDate.now();
