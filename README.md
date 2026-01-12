@@ -1,4 +1,4 @@
-# better-life backend/msa
+# better-life backend/msa -> v1
 
 Multi-module Spring Boot backend for better-life. This repo hosts the core services and deployment artifacts used by local Docker Compose and the home server deployment.
 
