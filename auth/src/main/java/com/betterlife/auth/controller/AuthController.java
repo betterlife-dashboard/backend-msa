@@ -104,7 +104,7 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
     })
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@CookieValue(name = "refresh_token") String refreshToken, HttpServletResponse response) {
+    public ResponseEntity<Void> logout(@CookieValue(name = "refresh_token") String refreshToken) {
         authService.logout(refreshToken);
         return ResponseEntity.noContent().build();
     }
@@ -116,7 +116,7 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
     })
     @DeleteMapping("/withdraw")
-    public ResponseEntity<Void> withdraw(@CookieValue(name = "refresh_token") String refreshToken, HttpServletResponse response) {
+    public ResponseEntity<Void> withdraw(@CookieValue(name = "refresh_token") String refreshToken) {
         authService.withdraw(refreshToken);
         return ResponseEntity.noContent().build();
     }
