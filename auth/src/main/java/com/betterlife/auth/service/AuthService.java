@@ -4,13 +4,18 @@ import com.betterlife.auth.domain.UserEntity;
 import com.betterlife.auth.dto.LoginRequest;
 import com.betterlife.auth.dto.LoginResponse;
 import com.betterlife.auth.dto.RegisterRequest;
+import com.betterlife.auth.dto.UserResponse;
 import com.betterlife.auth.exception.DuplicateUserException;
 import com.betterlife.auth.exception.InvalidRequestException;
 import com.betterlife.auth.repository.UserRepository;
 import com.betterlife.auth.util.JwtProvider;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -19,19 +24,18 @@ public class AuthService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     private final JwtProvider jwtProvider;
-//    private final StringRedisTemplate redisTemplate;
-//    private final TodoClient todoClient;
-//
-//    public UserResponse me(Long userId) {
-//        UserEntity user = userRepository.findById(userId)
-//                .orElseThrow(() -> new EntityNotFoundException("존재하지 않는 유저입니다."));
-//        return UserResponse.builder()
-//                .id(user.getId())
-//                .name(user.getName())
-//                .email(user.getEmail())
-//                .build();
-//    }
-//
+    private final StringRedisTemplate redisTemplate;
+
+    public UserResponse me(Long userId) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new InvalidRequestException("존재하지 않는 유저입니다."));
+        return UserResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .build();
+    }
+
     public void register(RegisterRequest request) {
         if (request.getName() == null || request.getName().isBlank()) {
             throw new InvalidRequestException("아이디를 입력해주세요.");
@@ -54,7 +58,7 @@ public class AuthService {
                 .build();
         userRepository.save(user);
     }
-//
+
     public String login(LoginRequest request) {
         UserEntity user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new InvalidRequestException("존재하지 않는 사용자입니다."));
@@ -62,11 +66,11 @@ public class AuthService {
             throw new InvalidRequestException("패스워드가 일치하지 않습니다.");
         }
         String refreshToken = jwtProvider.createRefreshToken(user.getId());
-//        String key = "refresh:" + user.getId();
-//        redisTemplate.opsForValue().set(key, refreshToken, 30, TimeUnit.DAYS);
+        String key = "refresh:" + user.getId();
+        redisTemplate.opsForValue().set(key, refreshToken, 30, TimeUnit.DAYS);
         return refreshToken;
     }
-//
+
     public LoginResponse renew(String refreshToken) {
         Long userId = jwtProvider.getUserId(refreshToken);
         UserEntity user = userRepository.findById(userId)
@@ -78,57 +82,52 @@ public class AuthService {
                 .token(token)
                 .build();
     }
-//
-//    public void logout(String refreshToken) {
-//        if (!jwtProvider.validateToken(refreshToken)) {
-//            throw new InvalidRequestException("유효하지 않은 토큰입니다.");
-//        }
-//
-//        Long userId = jwtProvider.getUserId(refreshToken);
-//        String key = "refresh:" + userId;
-//
-//        String stored = redisTemplate.opsForValue().get(key);
-//        if (stored != null && stored.equals(refreshToken)) {
-//            redisTemplate.delete(key);
-//        }
-//    }
-//
-//    public void withdraw(String refreshToken) {
-//        Long userId = jwtProvider.getUserId(refreshToken);
-//
-//        this.logout(refreshToken);
-//        // 위험한 요청을 먼저 처리!
-//        todoClient.deleteAllTodo(userId);
-//        userRepository.deleteById(userId);
-//    }
-//
-//    public String checkRefresh(String refreshToken) {
-//        if (refreshToken == null) {
-//            throw new InvalidRequestException("토큰이 존재하지 않습니다.");
-//        }
-//
-//        if (!jwtProvider.validateToken(refreshToken)) {
-//            throw new InvalidRequestException("유효하지 않은 토큰입니다.");
-//        }
-//
-//        Long userId = jwtProvider.getUserId(refreshToken);
-//        String key = "refresh:" + userId;
-//        String storedToken = redisTemplate.opsForValue().get(key);
-//
-//        if (storedToken == null) {
-//            throw new InvalidRequestException("토큰이 만료되었습니다.");
-//        }
-//
-//        if (!storedToken.equals(refreshToken)) {
-//            redisTemplate.delete(key);
-//            throw new InvalidRequestException("잘못된 토큰입니다.");
-//        }
-//
-//        String newRefresh = jwtProvider.createRefreshToken(userId);
-//        redisTemplate.opsForValue().set(key, newRefresh, 30, TimeUnit.DAYS);
-//        return newRefresh;
-//    }
-//
+
+    public void logout(String refreshToken) {
+        if (!jwtProvider.validateToken(refreshToken)) {
+            throw new InvalidRequestException("유효하지 않은 토큰입니다.");
+        }
+
+        Long userId = jwtProvider.getUserId(refreshToken);
+        String key = "refresh:" + userId;
+
+        String stored = redisTemplate.opsForValue().get(key);
+        if (stored != null && stored.equals(refreshToken)) {
+            redisTemplate.delete(key);
+        }
+    }
+
+    public void withdraw(String refreshToken) {
+        Long userId = jwtProvider.getUserId(refreshToken);
+
+        this.logout(refreshToken);
+        // TODO : 메시지 전송을 통한 Todo 삭제로 데이터 정합성 확보 필요
+        userRepository.deleteById(userId);
+    }
+
+    public String checkRefresh(String refreshToken) {
+        if (!jwtProvider.validateToken(refreshToken)) {
+            throw new InvalidRequestException("유효하지 않은 토큰입니다.");
+        }
+
+        Long userId = jwtProvider.getUserId(refreshToken);
+        String key = "refresh:" + userId;
+        String storedToken = redisTemplate.opsForValue().get(key);
+
+        if (storedToken == null) {
+            throw new InvalidRequestException("토큰이 만료되었습니다.");
+        }
+
+        if (!storedToken.equals(refreshToken)) {
+            redisTemplate.delete(key);
+            throw new InvalidRequestException("잘못된 토큰입니다.");
+        }
+
+        String newRefresh = jwtProvider.createRefreshToken(userId);
+        redisTemplate.opsForValue().set(key, newRefresh, 30, TimeUnit.DAYS);
+        return newRefresh;
+    }
+
     private boolean isValidPassword(String password) {
         return password.length() >= 8 &&
                 password.matches(".*[A-Za-z].*") &&

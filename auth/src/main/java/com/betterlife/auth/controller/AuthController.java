@@ -3,6 +3,8 @@ package com.betterlife.auth.controller;
 import com.betterlife.auth.dto.*;
 import com.betterlife.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -21,10 +23,23 @@ public class AuthController {
 
     private final AuthService authService;
 
-//    @GetMapping("/me")
-//    public ResponseEntity<UserResponse> me(@RequestHeader("X-User-Id") Long userId) {
-//        return ResponseEntity.ok(authService.me(userId));
-//    }
+    @Operation(operationId = "me", summary = "토큰 검증")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "토큰 검증 성공",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))),
+            @ApiResponse(responseCode = "400", description = "존재하지 않는 유저",
+                    content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
+    })
+    @Parameter(
+            in = ParameterIn.HEADER,
+            name = "X-User-Id",
+            required = true,
+            schema = @Schema(type = "integer", defaultValue = "-1", example = "-1")
+    )
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> me(@RequestHeader("X-User-Id") Long userId) {
+        return ResponseEntity.ok(authService.me(userId));
+    }
 
     @Operation(operationId = "register", summary = "회원가입")
     @ApiResponses({
@@ -32,7 +47,7 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "잘못된 형식",
                     content = @Content(schema = @Schema(implementation = ErrorMessageDto.class))),
             @ApiResponse(responseCode = "409", description = "중복된 이메일",
-                    content = @Content(schema = @Schema(implementation = ErrorMessageDto.class))),
+                    content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
     })
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
@@ -40,12 +55,12 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body("회원가입이 완료되었습니다.");
     }
 
-    @Operation(operationId = "login", summary = "login")
+    @Operation(operationId = "login", summary = "로그인")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "로그인 성공",
-                    content = @Content(schema = @Schema(implementation = ResponseEntity.class))),
+                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
             @ApiResponse(responseCode = "400", description = "잘못된 형식",
-                    content = @Content(schema = @Schema(implementation = ErrorMessageDto.class))),
+                    content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
     })
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
@@ -60,50 +75,49 @@ public class AuthController {
         response.addHeader("Set-Cookie", cookie.toString());
         return ResponseEntity.ok(authService.renew(refresh));
     }
-//
-//    @PostMapping("/renew")
-//    public ResponseEntity<LoginResponse> renew(@CookieValue(name = "refresh_token", required = false) String refreshToken, HttpServletResponse response) {
-//        String refresh = authService.checkRefresh(refreshToken);
-//        ResponseCookie cookie = ResponseCookie.from("refresh_token", refresh)
-//                .httpOnly(true)
-//                .secure(true)
-//                .path("/")
-//                .sameSite("None")
-//                .maxAge(2592000)
-//                .build();
-//        response.addHeader("Set-Cookie", cookie.toString());
-//        return ResponseEntity.ok(authService.renew(refresh));
-//    }
-//
-//    @PostMapping("/logout")
-//    public ResponseEntity<Void> logout(@CookieValue(name = "refresh_token", required = false) String refreshToken, HttpServletResponse response) {
-//        if (refreshToken != null) {
-//            authService.logout(refreshToken);
-//        }
-//        ResponseCookie cookie = ResponseCookie.from("refresh_token", "")
-//                .httpOnly(true)
-//                .secure(true)
-//                .path("/")
-//                .sameSite("None")
-//                .maxAge(0)
-//                .build();
-//        response.addHeader("Set-Cookie", cookie.toString());
-//        return ResponseEntity.noContent().build();
-//    }
-//
-//    @DeleteMapping("/withdraw")
-//    public ResponseEntity<Void> withdraw(@CookieValue(name = "refresh_token", required = false) String refreshToken, HttpServletResponse response) {
-//        if (refreshToken != null) {
-//            authService.withdraw(refreshToken);
-//        }
-//        ResponseCookie cookie = ResponseCookie.from("refresh_token", "")
-//                .httpOnly(true)
-//                .secure(true)
-//                .path("/")
-//                .sameSite("None")
-//                .maxAge(0)
-//                .build();
-//        response.addHeader("Set-Cookie", cookie.toString());
-//        return ResponseEntity.noContent().build();
-//    }
+
+    @Operation(operationId = "renew", summary = "토큰 갱신")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "갱신 성공",
+                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
+            @ApiResponse(responseCode = "400", description = "잘못된 형식",
+                    content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
+    })
+    @PostMapping("/renew")
+    public ResponseEntity<LoginResponse> renew(@CookieValue(name = "refresh_token") String refreshToken, HttpServletResponse response) {
+        String refresh = authService.checkRefresh(refreshToken);
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", refresh)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("None")
+                .maxAge(2592000)
+                .build();
+        response.addHeader("Set-Cookie", cookie.toString());
+        return ResponseEntity.ok(authService.renew(refresh));
+    }
+
+    @Operation(operationId = "logout", summary = "로그아웃")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "로그아웃 성공"),
+            @ApiResponse(responseCode = "400", description = "유효하지 않은 토큰",
+                    content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
+    })
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@CookieValue(name = "refresh_token") String refreshToken, HttpServletResponse response) {
+        authService.logout(refreshToken);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(operationId = "withdraw", summary = "탈퇴")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "탈퇴 완료"),
+            @ApiResponse(responseCode = "400", description = "유효하지 않은 토큰",
+                    content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
+    })
+    @DeleteMapping("/withdraw")
+    public ResponseEntity<Void> withdraw(@CookieValue(name = "refresh_token") String refreshToken, HttpServletResponse response) {
+        authService.withdraw(refreshToken);
+        return ResponseEntity.noContent().build();
+    }
 }

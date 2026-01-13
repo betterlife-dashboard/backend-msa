@@ -12,6 +12,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.hamcrest.Matchers;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
@@ -50,22 +52,28 @@ public class AuthIntegrationTest extends IntegrationTestBase {
                 }
                 """.formatted(email, rawPassword);
 
+        long before = userRepository.count();
         mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reqJsonInvalid))
                 .andExpect(MockMvcResultMatchers.status().isBadRequest())
                 .andExpect(MockMvcResultMatchers.content().string(Matchers.containsString("숫자와 문자")));
+        assertThat(before).isEqualTo(userRepository.count());
 
+        before = userRepository.count();
         mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reqJson))
                 .andExpect(MockMvcResultMatchers.status().isCreated())
                 .andExpect(MockMvcResultMatchers.content().string(Matchers.containsString("회원가입")));
+        assertThat(before + 1).isEqualTo(userRepository.count());
 
+        before = userRepository.count();
         mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reqJson))
                 .andExpect(MockMvcResultMatchers.status().isConflict())
                 .andExpect(MockMvcResultMatchers.content().string(Matchers.containsString("이미 존재")));
+        assertThat(before).isEqualTo(userRepository.count());
     }
 }
