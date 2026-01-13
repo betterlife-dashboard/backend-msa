@@ -9,6 +9,7 @@ import lombok.*;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = "password")
 public class RegisterRequest {
 
     @Schema(example = "test")

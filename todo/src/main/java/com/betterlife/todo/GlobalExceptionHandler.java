@@ -1,5 +1,6 @@
 package com.betterlife.todo;
 
+import com.betterlife.todo.dto.ErrorMessageDto;
 import com.betterlife.todo.exception.AccessDeniedException;
 import com.betterlife.todo.exception.InvalidRequestException;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,28 +18,28 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleInvalidRequest(InvalidRequestException e) {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("message", e.getMessage()));
+                .body(new ErrorMessageDto(e.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleException(Exception e) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("message", e.getMessage()));
+                .body(new ErrorMessageDto(e.getMessage()));
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<?> handleEntityNotFound(EntityNotFoundException e) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(Map.of("message", e.getMessage()));
+                .body(new ErrorMessageDto(e.getMessage()));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<?> handleAccessDenied(AccessDeniedException e) {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
-                .body(Map.of("message", e.getMessage()));
+                .body(new ErrorMessageDto(e.getMessage()));
     }
 
 }

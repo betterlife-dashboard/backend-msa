@@ -1,8 +1,7 @@
 package com.betterlife.todo.enums;
 
 public enum TodoStatus {
-    PLANNED,
+    PENDING,
     DONE,
-    CANCELLED,
-    EXPIRED
+    CANCELLED
 }

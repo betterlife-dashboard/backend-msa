@@ -1,6 +1,6 @@
 package com.betterlife.todo.dto;
 
-import com.betterlife.todo.domain.Todo;
+import com.betterlife.todo.domain.TodoEntity;
 import com.betterlife.todo.enums.TodoStatus;
 import com.betterlife.todo.enums.TodoType;
 import lombok.Getter;
@@ -8,8 +8,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Getter
 @Setter
@@ -18,26 +19,34 @@ import java.time.LocalDateTime;
 public class TodoResponse {
 
     private Long id;
+    private Long recurTaskId;
+    private TodoType todoType;
+    private TodoStatus todoStatus;
     private String title;
-    private TodoType type = TodoType.GENERAL;
-    private TodoStatus status = TodoStatus.PLANNED;
-    private Integer repeatDays;
-    private LocalDateTime activeFrom;
-    private LocalDateTime activeUntil;
-    private Timestamp createdAt;
-    private Timestamp updatedAt;
+    private String memo;
+    private boolean allDay;
+    private LocalDate occurrenceDate;
+    private LocalTime atTime;
+    private LocalDateTime completedAt;
+    private Integer durationSec;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
-    public static TodoResponse fromEntity(Todo todo) {
+    public static TodoResponse fromEntity(TodoEntity todo) {
         TodoResponse dto = new TodoResponse();
-        dto.setId(todo.getId());
-        dto.setTitle(todo.getTitle());
-        dto.setType(todo.getType());
-        dto.setStatus(todo.getStatus());
-        dto.setRepeatDays(todo.getRepeatDays());
-        dto.setActiveFrom(todo.getActiveFrom());
-        dto.setActiveUntil(todo.getActiveUntil());
-        dto.setCreatedAt(todo.getCreatedAt());
-        dto.setUpdatedAt(todo.getUpdatedAt());
+        dto.id = todo.getId();
+        dto.recurTaskId = todo.getRecurTaskId();
+        dto.todoType = todo.getTodoType();
+        dto.todoStatus = todo.getTodoStatus();
+        dto.title = todo.getTitle();
+        dto.memo = todo.getMemo();
+        dto.allDay = todo.isAllDay();
+        dto.occurrenceDate = todo.getOccurrenceDate();
+        dto.atTime = todo.getAtTime();
+        dto.completedAt = todo.getCompletedAt();
+        dto.durationSec = todo.getDurationSec();
+        dto.createdAt = todo.getCreatedAt();
+        dto.updatedAt = todo.getUpdatedAt();
         return dto;
     }
 }

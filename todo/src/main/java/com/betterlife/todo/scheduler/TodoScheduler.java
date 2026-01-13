@@ -9,13 +9,13 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TodoScheduler {
 
-    private final TodoService todoService;
-
-    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
-    public void generateDailyRecurringTodos() {
-        todoService.generateRecurringTodos();
-    }
-
-    @Scheduled(cron = "0 */10 * * * *", zone = "Asia/Seoul")
-    public void closePastTodos() { todoService.closePastTodos(); }
+//    private final TodoService todoService;
+//
+//    @Scheduled(cron = "0 0 0 * * *", zone = "Asia/Seoul")
+//    public void generateDailyRecurringTodos() {
+//        todoService.generateRecurringTodos();
+//    }
+//
+//    @Scheduled(cron = "0 */10 * * * *", zone = "Asia/Seoul")
+//    public void closePastTodos() { todoService.closePastTodos(); }
 }

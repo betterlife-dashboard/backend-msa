@@ -26,19 +26,19 @@ public class AuthController {
         return ResponseEntity.ok("회원가입이 완료되었습니다.");
     }
 
-//    @PostMapping("/login")
-//    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
-//        String refresh = authService.login(request);
-//        ResponseCookie cookie = ResponseCookie.from("refresh_token", refresh)
-//                .httpOnly(true)
-//                .secure(true)
-//                .path("/")
-//                .sameSite("None")
-//                .maxAge(2592000)
-//                .build();
-//        response.addHeader("Set-Cookie", cookie.toString());
-//        return ResponseEntity.ok(authService.renew(refresh));
-//    }
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request, HttpServletResponse response) {
+        String refresh = authService.login(request);
+        ResponseCookie cookie = ResponseCookie.from("refresh_token", refresh)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("None")
+                .maxAge(2592000)
+                .build();
+        response.addHeader("Set-Cookie", cookie.toString());
+        return ResponseEntity.ok(authService.renew(refresh));
+    }
 //
 //    @PostMapping("/renew")
 //    public ResponseEntity<LoginResponse> renew(@CookieValue(name = "refresh_token", required = false) String refreshToken, HttpServletResponse response) {

@@ -14,9 +14,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @ToString
 public class TodoUpdateRequest {
-    private String title;
-    private TodoType type;
-    private TodoStatus status = TodoStatus.PLANNED;
-    private LocalDateTime activeFrom;
-    private LocalDateTime activeUntil;
+//    private String title;
+//    private TodoType type;
+//    private TodoStatus status = TodoStatus.PLANNED;
+//    private LocalDateTime activeFrom;
+//    private LocalDateTime activeUntil;
 }

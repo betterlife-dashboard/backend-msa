@@ -1,12 +1,13 @@
 package com.betterlife.auth.service;
 
 import com.betterlife.auth.domain.UserEntity;
+import com.betterlife.auth.dto.LoginRequest;
+import com.betterlife.auth.dto.LoginResponse;
 import com.betterlife.auth.dto.RegisterRequest;
 import com.betterlife.auth.exception.DuplicateUserException;
 import com.betterlife.auth.exception.InvalidRequestException;
 import com.betterlife.auth.repository.UserRepository;
 import com.betterlife.auth.util.JwtProvider;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -54,25 +55,29 @@ public class AuthService {
         userRepository.save(user);
     }
 //
-//    public String login(LoginRequest request) {
-//        User user = userRepository.findByEmail(request.getEmail())
-//                .orElseThrow(() -> new InvalidRequestException("존재하지 않는 사용자입니다."));
-//        if (!encoder.matches(request.getPassword(), user.getPassword())) {
-//            throw new InvalidRequestException("패스워드가 일치하지 않습니다.");
-//        }
-//        String refreshToken = jwtProvider.createRefreshToken(user.getId());
+    public String login(LoginRequest request) {
+        UserEntity user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new InvalidRequestException("존재하지 않는 사용자입니다."));
+        if (!encoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new InvalidRequestException("패스워드가 일치하지 않습니다.");
+        }
+        String refreshToken = jwtProvider.createRefreshToken(user.getId());
 //        String key = "refresh:" + user.getId();
 //        redisTemplate.opsForValue().set(key, refreshToken, 30, TimeUnit.DAYS);
-//        return refreshToken;
-//    }
+        return refreshToken;
+    }
 //
-//    public LoginResponse renew(String refreshToken) {
-//        Long userId = jwtProvider.getUserId(refreshToken);
-//        String token = jwtProvider.createAccessToken(userId);
-//        return LoginResponse.builder()
-//                .token(token)
-//                .build();
-//    }
+    public LoginResponse renew(String refreshToken) {
+        Long userId = jwtProvider.getUserId(refreshToken);
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new InvalidRequestException("존재하지 않는 사용자입니다."));
+        String token = jwtProvider.createAccessToken(userId);
+        return LoginResponse.builder()
+                .name(user.getName())
+                .email(user.getEmail())
+                .token(token)
+                .build();
+    }
 //
 //    public void logout(String refreshToken) {
 //        if (!jwtProvider.validateToken(refreshToken)) {

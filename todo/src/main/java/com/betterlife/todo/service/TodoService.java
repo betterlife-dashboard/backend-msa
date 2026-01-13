@@ -1,7 +1,7 @@
 package com.betterlife.todo.service;
 
 import com.betterlife.todo.client.UserClient;
-import com.betterlife.todo.domain.Todo;
+import com.betterlife.todo.domain.TodoEntity;
 import com.betterlife.todo.dto.*;
 import com.betterlife.todo.enums.TodoStatus;
 import com.betterlife.todo.enums.TodoType;
@@ -25,165 +25,147 @@ import java.util.List;
 public class TodoService {
 
     private final TodoRepository todoRepository;
-    private final EventProducer eventProducer;
-    private final UserClient userClient;
+//    private final EventProducer eventProducer;
+//    private final UserClient userClient;
 
-    public List<TodoResponse> getTodosByDate(Long userId, LocalDate date) {
-        LocalDateTime todayStart = date.atStartOfDay();
-        LocalDateTime todayEnd = date.plusDays(1).atStartOfDay().minusSeconds(1);
-        return todoRepository.findAllByUserIdAndActiveFromBeforeAndActiveUntilAfter(userId, todayEnd, todayStart)
-                .stream()
-                .map(TodoResponse::fromEntity)
-                .toList();
-    }
-
-    public List<TodoResponse> getTodosByScheduledAndMonth(Long userId, LocalDate month) {
-        LocalDateTime monthStart = month.atStartOfDay();
-        LocalDateTime monthEnd = month.plusMonths(1).atStartOfDay().minusSeconds(1);
-        return todoRepository.findAllByUserIdAndTypeAndActiveFromBeforeAndActiveUntilAfter(userId, TodoType.SCHEDULE, monthEnd, monthStart)
-                .stream()
-                .map(TodoResponse::fromEntity)
-                .toList();
-    }
-
+//    public List<TodoResponse> getTodosByDate(Long userId, LocalDate date) {
+//        LocalDateTime todayStart = date.atStartOfDay();
+//        LocalDateTime todayEnd = date.plusDays(1).atStartOfDay().minusSeconds(1);
+//        return todoRepository.findAllByUserIdAndActiveFromBeforeAndActiveUntilAfter(userId, todayEnd, todayStart)
+//                .stream()
+//                .map(TodoResponse::fromEntity)
+//                .toList();
+//    }
+//
+//    public List<TodoResponse> getTodosByScheduledAndMonth(Long userId, LocalDate month) {
+//        LocalDateTime monthStart = month.atStartOfDay();
+//        LocalDateTime monthEnd = month.plusMonths(1).atStartOfDay().minusSeconds(1);
+//        return todoRepository.findAllByUserIdAndTypeAndActiveFromBeforeAndActiveUntilAfter(userId, TodoType.SCHEDULE, monthEnd, monthStart)
+//                .stream()
+//                .map(TodoResponse::fromEntity)
+//                .toList();
+//    }
+//
     public TodoResponse getTodoById(Long userId, Long todoId) {
-        Todo todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
+        TodoEntity todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
         if (!todo.getUserId().equals(userId)) {
             throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
         }
         return TodoResponse.fromEntity(todo);
     }
-
-    public TodoResponse createTodo(Long userId, TodoRequest todoRequest) {
-        userClient.getUser(userId);
-        LocalDateTime activeFrom = todoRequest.getActiveFrom();
-        LocalDateTime activeUntil = todoRequest.getActiveUntil();
-        if (todoRequest.getRepeatDays() == 0 && activeFrom.isAfter(activeUntil)) {
-            throw new InvalidRequestException("날짜 설정이 잘못되었습니다.");
-        }
-        if (todoRequest.getRepeatDays() != 0) {
-            activeFrom = null;
-            activeUntil = null;
-        }
-        Todo todo = Todo.builder()
+//
+    public TodoResponse createTodo(Long userId, TodoCreateRequest todoCreateRequest) {
+        TodoEntity todo = TodoEntity.builder()
                 .userId(userId)
-                .title(todoRequest.getTitle())
-                .type(todoRequest.getType())
-                .status(TodoStatus.PLANNED)
-                .repeatDays(todoRequest.getRepeatDays())
-                .activeFrom(activeFrom)
-                .activeUntil(activeUntil)
+                .recurTask(null)
+                .todoType(TodoType.TODO)
+                .todoStatus(TodoStatus.PENDING)
+                .title(todoCreateRequest.getTitle())
+                .memo(todoCreateRequest.getMemo())
+                .allDay(todoCreateRequest.isAllDay())
+                .occurrenceDate(todoCreateRequest.getOccurrenceDate())
+                .atTime(todoCreateRequest.getAtTime())
+                .completedAt(null)
+                .durationSec(null)
                 .build();
-        if (checkRepeatDate(todoRequest.getRepeatDays())) {
-            Todo child = Todo.builder()
-                    .userId(userId)
-                    .title(todoRequest.getTitle())
-                    .type(todoRequest.getType())
-                    .status(TodoStatus.PLANNED)
-                    .repeatDays(0)
-                    .activeFrom(LocalDate.now().atStartOfDay())
-                    .activeUntil(LocalDate.now().plusDays(1).atStartOfDay().minusSeconds(1))
-                    .build();
-            todo.addChildTodo(child);
-        }
-        Todo saved = todoRepository.save(todo);
+        TodoEntity saved = todoRepository.save(todo);
         return TodoResponse.fromEntity(saved);
     }
-
-    @Transactional
-    public TodoResponse updateTodo(Long userId, Long todoId, TodoUpdateRequest todoRequest) {
-        Todo todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
-        if (!todo.getUserId().equals(userId)) {
-            throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
-        }
-
-        todo.changeTitle(todoRequest.getTitle());
-        todo.changeType(todoRequest.getType());
-        todo.updateStatus(todoRequest.getStatus());
-        todo.changeActiveDate(todoRequest.getActiveFrom(), todoRequest.getActiveUntil());
-
-        return TodoResponse.fromEntity(todo);
-    }
-
-    @Transactional
-    public TodoResponse updateRepeatTodo(Long userId, Long todoId, RepeatTodoUpdateRequest todoRequest) {
-        Todo todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
-        if (!todo.getUserId().equals(userId)) {
-            throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
-        } else if (todoRequest.getRepeatDays() == 0) {
-            throw new InvalidRequestException("반복용 Todo는 반드시 반복되어야 합니다.");
-        }
-
-        todo.changeTitle(todoRequest.getTitle());
-        todo.changeType(todoRequest.getType());
-        todo.changeRepeatDays(todoRequest.getRepeatDays());
-
-        return TodoResponse.fromEntity(todo);
-    }
-
-    public void deleteTodo(Long userId, Long todoId) {
-        Todo todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
-        if (!todo.getUserId().equals(userId)) {
-            throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
-        }
-        if (todo.getType().equals(TodoType.SCHEDULE)) {
-            eventProducer.sendScheduleDeletedEvent(ScheduleDeletedEvent.builder()
-                    .todoId(todo.getId())
-                    .userId(todo.getUserId())
-                    .build());
-        }
-        todoRepository.deleteById(todoId);
-    }
-
-    @Transactional
-    public void deleteUser(Long userId) {
-        List<Todo> allByUserId = todoRepository.findAllByUserId(userId);
-        if (allByUserId.isEmpty()) {
-            return ;
-        }
-//        eventProducer.sendTodoAlarm(ScheduleAlarmEvent.fromEntity(allByUserId.get(0), "delete-user", "", ""));
-        todoRepository.deleteAllByUserId(userId);
-    }
-
-    public List<TodoResponse> getRecurTodos(Long userId) {
-        return todoRepository.findAllByUserIdAndIsRecurring(userId, true)
-                .stream()
-                .map(TodoResponse::fromEntity)
-                .toList();
-    }
-
-    public Boolean checkRepeatDate(Integer weeks) {
-        LocalDate today = LocalDate.now();
-        DayOfWeek dayOfWeek = today.getDayOfWeek();
-        int now = 1 << (dayOfWeek.getValue() - 1);
-        return (weeks & now) != 0;
-    }
-
-    @Transactional
-    public void generateRecurringTodos() {
-        List<Todo> todos = todoRepository.findAllByIsRecurring(true);
-        for (Todo todo : todos) {
-            if (checkRepeatDate(todo.getRepeatDays())) {
-                Todo child = Todo.builder()
-                        .userId(todo.getUserId())
-                        .title(todo.getTitle())
-                        .type(todo.getType())
-                        .status(TodoStatus.PLANNED)
-                        .repeatDays(0)
-                        .activeFrom(LocalDate.now().atStartOfDay())
-                        .activeUntil(LocalDate.now().plusDays(1).atStartOfDay().minusSeconds(1))
-                        .build();
-                todo.addChildTodo(child);
-            }
-        }
-    }
-
-    @Transactional
-    public void closePastTodos() {
-        LocalDateTime currentTime = LocalDateTime.now();
-        List<Todo> todos = todoRepository.findAllByStatusAndActiveUntilBefore(TodoStatus.PLANNED, currentTime);
-        todos.forEach(todo -> {
-                todo.updateStatus(TodoStatus.EXPIRED);
-        });
-    }
+//
+//    @Transactional
+//    public TodoResponse updateTodo(Long userId, Long todoId, TodoUpdateRequest todoRequest) {
+//        Todo todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
+//        if (!todo.getUserId().equals(userId)) {
+//            throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
+//        }
+//
+//        todo.changeTitle(todoRequest.getTitle());
+//        todo.changeType(todoRequest.getType());
+//        todo.updateStatus(todoRequest.getStatus());
+//        todo.changeActiveDate(todoRequest.getActiveFrom(), todoRequest.getActiveUntil());
+//
+//        return TodoResponse.fromEntity(todo);
+//    }
+//
+//    @Transactional
+//    public TodoResponse updateRepeatTodo(Long userId, Long todoId, RepeatTodoUpdateRequest todoRequest) {
+//        Todo todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
+//        if (!todo.getUserId().equals(userId)) {
+//            throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
+//        } else if (todoRequest.getRepeatDays() == 0) {
+//            throw new InvalidRequestException("반복용 Todo는 반드시 반복되어야 합니다.");
+//        }
+//
+//        todo.changeTitle(todoRequest.getTitle());
+//        todo.changeType(todoRequest.getType());
+//        todo.changeRepeatDays(todoRequest.getRepeatDays());
+//
+//        return TodoResponse.fromEntity(todo);
+//    }
+//
+//    public void deleteTodo(Long userId, Long todoId) {
+//        Todo todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
+//        if (!todo.getUserId().equals(userId)) {
+//            throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
+//        }
+//        if (todo.getType().equals(TodoType.SCHEDULE)) {
+//            eventProducer.sendScheduleDeletedEvent(ScheduleDeletedEvent.builder()
+//                    .todoId(todo.getId())
+//                    .userId(todo.getUserId())
+//                    .build());
+//        }
+//        todoRepository.deleteById(todoId);
+//    }
+//
+//    @Transactional
+//    public void deleteUser(Long userId) {
+//        List<Todo> allByUserId = todoRepository.findAllByUserId(userId);
+//        if (allByUserId.isEmpty()) {
+//            return ;
+//        }
+////        eventProducer.sendTodoAlarm(ScheduleAlarmEvent.fromEntity(allByUserId.get(0), "delete-user", "", ""));
+//        todoRepository.deleteAllByUserId(userId);
+//    }
+//
+//    public List<TodoResponse> getRecurTodos(Long userId) {
+//        return todoRepository.findAllByUserIdAndIsRecurring(userId, true)
+//                .stream()
+//                .map(TodoResponse::fromEntity)
+//                .toList();
+//    }
+//
+//    public Boolean checkRepeatDate(Integer weeks) {
+//        LocalDate today = LocalDate.now();
+//        DayOfWeek dayOfWeek = today.getDayOfWeek();
+//        int now = 1 << (dayOfWeek.getValue() - 1);
+//        return (weeks & now) != 0;
+//    }
+//
+//    @Transactional
+//    public void generateRecurringTodos() {
+//        List<Todo> todos = todoRepository.findAllByIsRecurring(true);
+//        for (Todo todo : todos) {
+//            if (checkRepeatDate(todo.getRepeatDays())) {
+//                Todo child = Todo.builder()
+//                        .userId(todo.getUserId())
+//                        .title(todo.getTitle())
+//                        .type(todo.getType())
+//                        .status(TodoStatus.PLANNED)
+//                        .repeatDays(0)
+//                        .activeFrom(LocalDate.now().atStartOfDay())
+//                        .activeUntil(LocalDate.now().plusDays(1).atStartOfDay().minusSeconds(1))
+//                        .build();
+//                todo.addChildTodo(child);
+//            }
+//        }
+//    }
+//
+//    @Transactional
+//    public void closePastTodos() {
+//        LocalDateTime currentTime = LocalDateTime.now();
+//        List<Todo> todos = todoRepository.findAllByStatusAndActiveUntilBefore(TodoStatus.PLANNED, currentTime);
+//        todos.forEach(todo -> {
+//                todo.updateStatus(TodoStatus.EXPIRED);
+//        });
+//    }
 }

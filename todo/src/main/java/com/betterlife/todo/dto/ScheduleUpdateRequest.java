@@ -15,10 +15,10 @@ import java.util.List;
 @NoArgsConstructor
 @ToString
 public class ScheduleUpdateRequest {
-    private String title;
-    private TodoType type;
-    private TodoStatus status = TodoStatus.PLANNED;
-    private LocalDateTime activeFrom;
-    private LocalDateTime activeUntil;
-    private List<String> alarms;
+//    private String title;
+//    private TodoType type;
+//    private TodoStatus status = TodoStatus.PLANNED;
+//    private LocalDateTime activeFrom;
+//    private LocalDateTime activeUntil;
+//    private List<String> alarms;
 }
