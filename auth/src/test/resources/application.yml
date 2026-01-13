@@ -1,24 +1,24 @@
 spring:
-  datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
     show-sql: true
   flyway:
-    enabled: false
+    enabled: true
+    locations: classpath:db/migration
 
-todo:
-  service:
-    url: http://localhost:8082
+logging:
+  level:
+    org.hibernate.sql: debug
 
 jwt:
   secret: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing
   accessExpiration: 3600000
   refreshExpiration: 2592000000
+
+todo:
+  service:
+    url: http://localhost:8082

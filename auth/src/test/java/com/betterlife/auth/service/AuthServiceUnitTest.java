@@ -1,32 +1,14 @@
 package com.betterlife.auth.service;
 
 import com.betterlife.auth.client.TodoClient;
-import com.betterlife.auth.dto.LoginRequest;
-import com.betterlife.auth.dto.RegisterRequest;
-import com.betterlife.auth.exception.DuplicateUserException;
 import com.betterlife.auth.repository.UserRepository;
 import com.betterlife.auth.util.JwtProvider;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceUnitTest {

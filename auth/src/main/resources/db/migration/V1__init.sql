@@ -14,4 +14,4 @@ CREATE TABLE users (
 
     PRIMARY KEY (id),
     UNIQUE KEY uk_users_email (email)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mv4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
