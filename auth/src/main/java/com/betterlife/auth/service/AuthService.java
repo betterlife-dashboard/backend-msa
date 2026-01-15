@@ -84,10 +84,7 @@ public class AuthService {
     }
 
     public void logout(String refreshToken) {
-        if (!jwtProvider.validateToken(refreshToken)) {
-            throw new InvalidRequestException("유효하지 않은 토큰입니다.");
-        }
-
+        jwtProvider.validateToken(refreshToken);
         Long userId = jwtProvider.getUserId(refreshToken);
         String key = "refresh:" + userId;
 
@@ -106,9 +103,7 @@ public class AuthService {
     }
 
     public String checkRefresh(String refreshToken) {
-        if (!jwtProvider.validateToken(refreshToken)) {
-            throw new InvalidRequestException("유효하지 않은 토큰입니다.");
-        }
+        jwtProvider.validateToken(refreshToken);
 
         Long userId = jwtProvider.getUserId(refreshToken);
         String key = "refresh:" + userId;
