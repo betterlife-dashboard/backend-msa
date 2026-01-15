@@ -81,6 +81,8 @@ public class AuthController {
             @ApiResponse(responseCode = "200", description = "갱신 성공",
                     content = @Content(schema = @Schema(implementation = LoginResponse.class))),
             @ApiResponse(responseCode = "400", description = "잘못된 형식",
+                    content = @Content(schema = @Schema(implementation = ErrorMessageDto.class))),
+            @ApiResponse(responseCode = "401", description = "유효하지 않은 토큰",
                     content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
     })
     @PostMapping("/renew")

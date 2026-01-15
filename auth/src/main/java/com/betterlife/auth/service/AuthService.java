@@ -7,6 +7,7 @@ import com.betterlife.auth.dto.RegisterRequest;
 import com.betterlife.auth.dto.UserResponse;
 import com.betterlife.auth.exception.DuplicateUserException;
 import com.betterlife.auth.exception.InvalidRequestException;
+import com.betterlife.auth.exception.UnauthorizedException;
 import com.betterlife.auth.repository.UserRepository;
 import com.betterlife.auth.util.JwtProvider;
 import lombok.RequiredArgsConstructor;
@@ -113,12 +114,12 @@ public class AuthService {
         String storedToken = redisTemplate.opsForValue().get(key);
 
         if (storedToken == null) {
-            throw new InvalidRequestException("토큰이 만료되었습니다.");
+            throw new UnauthorizedException("토큰이 만료되었습니다.");
         }
 
         if (!storedToken.equals(refreshToken)) {
             redisTemplate.delete(key);
-            throw new InvalidRequestException("잘못된 토큰입니다.");
+            throw new UnauthorizedException("잘못된 토큰입니다.");
         }
 
         String newRefresh = jwtProvider.createRefreshToken(userId, sessionId);

@@ -2,6 +2,7 @@ package com.betterlife.auth.integration;
 
 import com.betterlife.auth.repository.UserRepository;
 import com.betterlife.auth.util.JwtProvider;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,6 +120,12 @@ public class AuthIntegrationTest extends IntegrationTestBase {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(reqJson));
 
+        mockMvc.perform(MockMvcRequestBuilders.post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(reqJsonLoginInvalid))
+                .andExpect(MockMvcResultMatchers.status().isBadRequest())
+                .andExpect(MockMvcResultMatchers.content().string(containsString("패스워드")));
+
         MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/auth/login")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(reqJsonLogin))
@@ -133,9 +140,69 @@ public class AuthIntegrationTest extends IntegrationTestBase {
 
         Long userId = jwtProvider.getUserId(refreshToken);
         String sessionId = jwtProvider.getSessionId(refreshToken);
-
         String redisKey = "refresh:" + userId + ":" + sessionId;
-
         assertThat(redisTemplate.hasKey(redisKey)).isTrue();
+    }
+
+    @Test
+    void renew() throws Exception {
+        String email = "sample@test.com";
+        String rawPassword = "AbCd1234";
+
+        String reqJson = """
+                {
+                    "name": "test",
+                    "email": "%s",
+                    "password": "%s"
+                }
+                """.formatted(email, rawPassword);
+        mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(reqJson));
+
+        String reqJsonLogin = """
+                {
+                    "email": "%s",
+                    "password": "%s"
+                }
+                """.formatted(email, rawPassword);
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(reqJsonLogin))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.token").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("test"))
+                .andExpect(MockMvcResultMatchers.header().string("Set-Cookie", containsString("refresh_token=")))
+                .andReturn();
+
+        String setCookie = result.getResponse().getHeader("Set-Cookie");
+        String refreshToken = setCookie.split("refresh_token=")[1].split(";")[0];
+
+        // 성공 케이스
+        result = mockMvc.perform(MockMvcRequestBuilders.post("/auth/renew")
+                        .cookie(new Cookie("refresh_token", refreshToken)))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.token").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("test"))
+                .andReturn();
+
+        setCookie = result.getResponse().getHeader("Set-Cookie");
+        refreshToken = setCookie.split("refresh_token=")[1].split(";")[0];
+
+        // 실패 -> 잘못된 리프레시 토큰
+        mockMvc.perform(MockMvcRequestBuilders.post("/auth/renew")
+                        .cookie(new Cookie("refresh_token", refreshToken + "a")))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized())
+                .andExpect(MockMvcResultMatchers.content().string(containsString("토큰")));
+
+        Long userId = jwtProvider.getUserId(refreshToken);
+        String sessionId = jwtProvider.getSessionId(refreshToken);
+        String redisKey = "refresh:" + userId + ":" + sessionId;
+        redisTemplate.delete(redisKey);
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/auth/renew")
+                        .cookie(new Cookie("refresh_token", refreshToken)))
+                .andExpect(MockMvcResultMatchers.status().isUnauthorized())
+                .andExpect(MockMvcResultMatchers.content().string(containsString("토큰")));
     }
 }
