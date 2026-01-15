@@ -100,7 +100,7 @@ public class AuthController {
     @Operation(operationId = "logout", summary = "로그아웃")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "로그아웃 성공"),
-            @ApiResponse(responseCode = "400", description = "유효하지 않은 토큰",
+            @ApiResponse(responseCode = "401", description = "유효하지 않은 토큰",
                     content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
     })
     @PostMapping("/logout")
@@ -112,7 +112,7 @@ public class AuthController {
     @Operation(operationId = "withdraw", summary = "탈퇴")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "탈퇴 완료"),
-            @ApiResponse(responseCode = "400", description = "유효하지 않은 토큰",
+            @ApiResponse(responseCode = "401", description = "유효하지 않은 토큰",
                     content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
     })
     @DeleteMapping("/withdraw")
