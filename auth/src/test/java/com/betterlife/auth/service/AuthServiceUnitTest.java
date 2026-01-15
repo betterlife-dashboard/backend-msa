@@ -1,6 +1,5 @@
 package com.betterlife.auth.service;
 
-import com.betterlife.auth.client.TodoClient;
 import com.betterlife.auth.repository.UserRepository;
 import com.betterlife.auth.util.JwtProvider;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,9 +20,6 @@ class AuthServiceUnitTest {
 
     @Mock
     private JwtProvider jwtProvider;
-
-    @Mock
-    private TodoClient todoClient;
 
     @Mock
     private ValueOperations<String, String> valueOperations;

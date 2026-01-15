@@ -39,12 +39,13 @@ public class JwtProvider {
                 .compact();
     }
 
-    public String createRefreshToken(Long userId) {
+    public String createRefreshToken(Long userId, String sessionId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + refreshValidityInMilliseconds);
 
         return Jwts.builder()
                 .subject(String.valueOf(userId))
+                .id(sessionId)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(key)
@@ -62,7 +63,19 @@ public class JwtProvider {
         } catch (JwtException | IllegalArgumentException e) {
             throw new UnauthorizedException("잘못된 형식의 토큰입니다.");
         }
+    }
 
+    public String getSessionId(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            return claims.getId();
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new UnauthorizedException("잘못된 형식의 토큰입니다.");
+        }
     }
 
     public void validateToken(String token) {

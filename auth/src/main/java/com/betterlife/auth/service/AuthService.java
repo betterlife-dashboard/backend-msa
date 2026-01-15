@@ -9,12 +9,12 @@ import com.betterlife.auth.exception.DuplicateUserException;
 import com.betterlife.auth.exception.InvalidRequestException;
 import com.betterlife.auth.repository.UserRepository;
 import com.betterlife.auth.util.JwtProvider;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -65,8 +65,9 @@ public class AuthService {
         if (!encoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new InvalidRequestException("패스워드가 일치하지 않습니다.");
         }
-        String refreshToken = jwtProvider.createRefreshToken(user.getId());
-        String key = "refresh:" + user.getId();
+        String sessionId = UUID.randomUUID().toString();
+        String refreshToken = jwtProvider.createRefreshToken(user.getId(), sessionId);
+        String key = "refresh:" + user.getId() + ":" + sessionId;
         redisTemplate.opsForValue().set(key, refreshToken, 30, TimeUnit.DAYS);
         return refreshToken;
     }
@@ -86,7 +87,8 @@ public class AuthService {
     public void logout(String refreshToken) {
         jwtProvider.validateToken(refreshToken);
         Long userId = jwtProvider.getUserId(refreshToken);
-        String key = "refresh:" + userId;
+        String sessionId = jwtProvider.getSessionId(refreshToken);
+        String key = "refresh:" + userId + ":" + sessionId;
 
         String stored = redisTemplate.opsForValue().get(key);
         if (stored != null && stored.equals(refreshToken)) {
@@ -106,7 +108,8 @@ public class AuthService {
         jwtProvider.validateToken(refreshToken);
 
         Long userId = jwtProvider.getUserId(refreshToken);
-        String key = "refresh:" + userId;
+        String sessionId = jwtProvider.getSessionId(refreshToken);
+        String key = "refresh:" + userId + ":" + sessionId;
         String storedToken = redisTemplate.opsForValue().get(key);
 
         if (storedToken == null) {
@@ -118,7 +121,7 @@ public class AuthService {
             throw new InvalidRequestException("잘못된 토큰입니다.");
         }
 
-        String newRefresh = jwtProvider.createRefreshToken(userId);
+        String newRefresh = jwtProvider.createRefreshToken(userId, sessionId);
         redisTemplate.opsForValue().set(key, newRefresh, 30, TimeUnit.DAYS);
         return newRefresh;
     }
