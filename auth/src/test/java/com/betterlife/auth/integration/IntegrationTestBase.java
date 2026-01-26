@@ -14,7 +14,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public abstract class IntegrationTestBase {
 
     @Container
-    @ServiceConnection // DynamicPropertySource를 쓰지 않아도 yml 파일을 보고 알아서 찾아넣어줌
+    @ServiceConnection // DynamicPropertySource를 쓰지 않아도 yml 파일을 보고 알아서 찾아 넣어줌
     static final MySQLContainer<?> mySql = new MySQLContainer<>("mysql:8.0")
             .withDatabaseName("testdb")
             .withUsername("test")
