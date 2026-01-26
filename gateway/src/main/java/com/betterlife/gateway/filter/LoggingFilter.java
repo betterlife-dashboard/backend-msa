@@ -15,7 +15,6 @@ public class LoggingFilter implements GlobalFilter, Ordered {
         System.out.println("[LoggingFilter] incoming: " + exchange.getRequest().getMethod() + " " + exchange.getRequest().getURI());
         long start = System.currentTimeMillis();
         String path = exchange.getRequest().getURI().getRawPath();
-
         return chain.filter(exchange)
                 .doOnSuccess(aVoid -> {
                     long elapsed = System.currentTimeMillis() - start;

@@ -12,6 +12,11 @@ spring:
     url: ${AUTH_DATASOURCE_URL}
     username: ${AUTH_DATASOURCE_USERNAME}
     password: ${AUTH_DATASOURCE_PASSWORD}
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
 
 jwt:
   secret: ${JWT_SECRET}

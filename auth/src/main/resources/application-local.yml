@@ -12,6 +12,11 @@ spring:
       ddl-auto: update
   flyway:
     enabled: false
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin
 
 jwt:
   secret: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing
