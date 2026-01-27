@@ -10,6 +10,11 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+rabbitmq:
+  user-deleted:
+    exchange: event.user.deleted.exchange
+    key: event.user.deleted.key
+
 logging:
   level:
     org.hibernate.sql: debug
@@ -19,6 +24,3 @@ jwt:
   accessExpiration: 3600000
   refreshExpiration: 2592000000
 
-todo:
-  service:
-    url: http://localhost:8082

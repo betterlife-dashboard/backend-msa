@@ -17,6 +17,16 @@ spring:
     port: ${RABBITMQ_PORT}
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+
+rabbitmq:
+  user-deleted:
+    exchange: event.user.deleted.exchange
+    key: event.user.deleted.key
+
 
 jwt:
   secret: ${JWT_SECRET}

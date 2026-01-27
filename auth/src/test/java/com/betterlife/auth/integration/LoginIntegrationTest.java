@@ -1,10 +1,15 @@
 package com.betterlife.auth.integration;
 
+import com.betterlife.auth.event.UserDeletedEvent;
 import com.betterlife.auth.repository.UserRepository;
 import com.betterlife.auth.util.JwtProvider;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,15 +19,17 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.hamcrest.Matchers;
+
+import java.time.Duration;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
-
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
-public class AuthIntegrationTest extends IntegrationTestBase {
+public class LoginIntegrationTest extends IntegrationTestBase {
 
     @Autowired
     private MockMvc mockMvc;
@@ -31,40 +38,23 @@ public class AuthIntegrationTest extends IntegrationTestBase {
     private StringRedisTemplate redisTemplate;
 
     @Autowired
+    private RabbitTemplate rabbitTemplate;
+
+    @Autowired
+    private ConnectionFactory connectionFactory;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
     private JwtProvider jwtProvider;
+    @Autowired
+    private DirectExchange deletedUserExchange;
 
     @BeforeEach
-    void beforeEach() {
+    void beforeEach() throws Exception {
         userRepository.deleteAll();
-    }
 
-    @Test
-    void register_invalidPassword_returns400() throws Exception {
-        String email = "sample@test.com";
-        String rawPasswordInvalid = "12345678";
-
-        String reqJsonInvalid = """
-                {
-                    "name": "test",
-                    "email": "%s",
-                    "password": "%s"
-                }
-                """.formatted(email, rawPasswordInvalid);
-
-        long before = userRepository.count();
-        mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(reqJsonInvalid))
-                .andExpect(MockMvcResultMatchers.status().isBadRequest())
-                .andExpect(MockMvcResultMatchers.content().string(containsString("숫자와 문자")));
-        assertThat(before).isEqualTo(userRepository.count());
-    }
-
-    @Test
-    void register_success_returns201_and_persists() throws Exception {
         String email = "sample@test.com";
         String rawPassword = "AbCd1234";
 
@@ -75,54 +65,15 @@ public class AuthIntegrationTest extends IntegrationTestBase {
                     "password": "%s"
                 }
                 """.formatted(email, rawPassword);
-
-        long before = userRepository.count();
         mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(reqJson))
-                .andExpect(MockMvcResultMatchers.status().isCreated())
-                .andExpect(MockMvcResultMatchers.content().string(containsString("회원가입")));
-        assertThat(before + 1).isEqualTo(userRepository.count());
-    }
-
-    @Test
-    void register_duplicateEmail_returns409() throws Exception {
-        String email = "sample@test.com";
-        String rawPassword = "AbCd1234";
-
-        String reqJson = """
-                {
-                    "name": "test",
-                    "email": "%s",
-                    "password": "%s"
-                }
-                """.formatted(email, rawPassword);
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(reqJson));
-
-        long before = userRepository.count();
-        mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(reqJson))
-                .andExpect(MockMvcResultMatchers.status().isConflict())
-                .andExpect(MockMvcResultMatchers.content().string(containsString("이미 존재")));
-        assertThat(before).isEqualTo(userRepository.count());
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(reqJson));
     }
 
     @Test
     void login_success_returns200_setsRefreshCookies_andStoresRefreshInRedis() throws Exception {
         String email = "sample@test.com";
         String rawPassword = "AbCd1234";
-
-        String reqJson = """
-                {
-                    "name": "test",
-                    "email": "%s",
-                    "password": "%s"
-                }
-                """.formatted(email, rawPassword);
 
         String reqJsonLogin = """
                 {
@@ -131,13 +82,9 @@ public class AuthIntegrationTest extends IntegrationTestBase {
                 }
                 """.formatted(email, rawPassword);
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(reqJson));
-
         MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/auth/login")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(reqJsonLogin))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(reqJsonLogin))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.token").isNotEmpty())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("test"))
@@ -156,16 +103,7 @@ public class AuthIntegrationTest extends IntegrationTestBase {
     @Test
     void login_invalidPassword_return400() throws Exception {
         String email = "sample@test.com";
-        String rawPassword = "AbCd1234";
         String rawPasswordInvalid = "12345678";
-
-        String reqJson = """
-                {
-                    "name": "test",
-                    "email": "%s",
-                    "password": "%s"
-                }
-                """.formatted(email, rawPassword);
 
         String reqJsonLoginInvalid = """
                 {
@@ -173,10 +111,6 @@ public class AuthIntegrationTest extends IntegrationTestBase {
                     "password": "%s"
                 }
                 """.formatted(email, rawPasswordInvalid);
-
-        mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(reqJson));
 
         mockMvc.perform(MockMvcRequestBuilders.post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -190,17 +124,6 @@ public class AuthIntegrationTest extends IntegrationTestBase {
     void renew_success_returns200() throws Exception {
         String email = "sample@test.com";
         String rawPassword = "AbCd1234";
-
-        String reqJson = """
-                {
-                    "name": "test",
-                    "email": "%s",
-                    "password": "%s"
-                }
-                """.formatted(email, rawPassword);
-        mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(reqJson));
 
         String reqJsonLogin = """
                 {
@@ -233,17 +156,6 @@ public class AuthIntegrationTest extends IntegrationTestBase {
         String email = "sample@test.com";
         String rawPassword = "AbCd1234";
 
-        String reqJson = """
-                {
-                    "name": "test",
-                    "email": "%s",
-                    "password": "%s"
-                }
-                """.formatted(email, rawPassword);
-        mockMvc.perform(MockMvcRequestBuilders.post("/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(reqJson));
-
         String reqJsonLogin = """
                 {
                     "email": "%s",
@@ -273,9 +185,88 @@ public class AuthIntegrationTest extends IntegrationTestBase {
         String redisKey = "refresh:" + userId + ":" + sessionId;
         redisTemplate.delete(redisKey);
 
+        // 실패 -> redis에서 삭제된 key
         mockMvc.perform(MockMvcRequestBuilders.post("/auth/renew")
                         .cookie(new Cookie("refresh_token", refreshToken)))
                 .andExpect(MockMvcResultMatchers.status().isUnauthorized())
                 .andExpect(MockMvcResultMatchers.content().string(containsString("토큰")));
+    }
+
+    @Test
+    void withdraw_success_returns204_publishMessage() throws Exception {
+        RabbitAdmin rabbitAdmin = new RabbitAdmin(connectionFactory);
+        Queue queue = new Queue("event.user.deleted.queue");
+        Binding binding = BindingBuilder.bind(queue).to(deletedUserExchange).with("event.user.deleted.key");
+        rabbitAdmin.declareQueue(queue);
+        rabbitAdmin.declareBinding(binding);
+
+        String email = "sample@test.com";
+        String rawPassword = "AbCd1234";
+
+        String reqJsonLogin = """
+                {
+                    "email": "%s",
+                    "password": "%s"
+                }
+                """.formatted(email, rawPassword);
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(reqJsonLogin))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.token").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("test"))
+                .andExpect(MockMvcResultMatchers.header().string("Set-Cookie", containsString("refresh_token=")))
+                .andReturn();
+
+        String setCookie = result.getResponse().getHeader("Set-Cookie");
+        String refreshToken = setCookie.split("refresh_token=")[1].split(";")[0];
+
+        // 성공
+        mockMvc.perform(MockMvcRequestBuilders.delete("/auth/withdraw")
+                        .cookie(new Cookie("refresh_token", refreshToken)))
+                .andExpect(MockMvcResultMatchers.status().isNoContent());
+
+        Long userId = jwtProvider.getUserId(refreshToken);
+        String sessionId = jwtProvider.getSessionId(refreshToken);
+        String redisKey = "refresh:" + userId + ":" + sessionId;
+
+        // 레디스 토큰 삭제 확인
+        String str = redisTemplate.opsForValue().get(redisKey);
+        assertThat(str).isNull();
+
+        // 메시지 전송 확인
+        rabbitTemplate.setReceiveTimeout(3000);
+        UserDeletedEvent event = (UserDeletedEvent) rabbitTemplate.receiveAndConvert("event.user.deleted.queue");
+        assertThat(event.getId()).isEqualTo(userId);
+    }
+
+    @Test
+    void withdraw_bindingFail_returnCallback() throws Exception {
+        String email = "sample@test.com";
+        String rawPassword = "AbCd1234";
+
+        String reqJsonLogin = """
+                {
+                    "email": "%s",
+                    "password": "%s"
+                }
+                """.formatted(email, rawPassword);
+        MvcResult result = mockMvc.perform(MockMvcRequestBuilders.post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(reqJsonLogin))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.token").isNotEmpty())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.name").value("test"))
+                .andExpect(MockMvcResultMatchers.header().string("Set-Cookie", containsString("refresh_token=")))
+                .andReturn();
+
+        String setCookie = result.getResponse().getHeader("Set-Cookie");
+        String refreshToken = setCookie.split("refresh_token=")[1].split(";")[0];
+
+        // 성공
+        mockMvc.perform(MockMvcRequestBuilders.delete("/auth/withdraw")
+                        .cookie(new Cookie("refresh_token", refreshToken)));
+
+        Thread.sleep(2000);
     }
 }

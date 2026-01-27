@@ -5,12 +5,15 @@ import com.betterlife.auth.dto.LoginRequest;
 import com.betterlife.auth.dto.LoginResponse;
 import com.betterlife.auth.dto.RegisterRequest;
 import com.betterlife.auth.dto.UserResponse;
+import com.betterlife.auth.event.EventProducer;
+import com.betterlife.auth.event.UserDeletedEvent;
 import com.betterlife.auth.exception.DuplicateUserException;
 import com.betterlife.auth.exception.InvalidRequestException;
 import com.betterlife.auth.exception.UnauthorizedException;
 import com.betterlife.auth.repository.UserRepository;
 import com.betterlife.auth.util.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ public class AuthService {
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
     private final JwtProvider jwtProvider;
     private final StringRedisTemplate redisTemplate;
+    private final EventProducer eventProducer;
 
     public UserResponse me(Long userId) {
         UserEntity user = userRepository.findById(userId)
@@ -101,7 +105,7 @@ public class AuthService {
         Long userId = jwtProvider.getUserId(refreshToken);
 
         this.logout(refreshToken);
-        // TODO : 메시지 전송을 통한 Todo 삭제로 데이터 정합성 확보 필요
+        eventProducer.sendUserDeletedEvent(userId);
         userRepository.deleteById(userId);
     }
 
