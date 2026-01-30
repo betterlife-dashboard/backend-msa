@@ -14,6 +14,7 @@ import java.util.Optional;
 public interface TodoRepository extends JpaRepository<TodoEntity, Long> {
     List<TodoEntity> findAllByUserId(Long userId);
     Optional<TodoEntity> findByTitle(String title);
+    void deleteAllByUserId(Long userId);
 
 //    List<TodoEntity> findAllByUserIdAndActiveFromBeforeAndActiveUntilAfter(
 //            Long userId,
@@ -41,5 +42,4 @@ public interface TodoRepository extends JpaRepository<TodoEntity, Long> {
 //            LocalDateTime activeUntilBefore
 //    );
 //
-//    void deleteAllByUserId(Long userId);
 }

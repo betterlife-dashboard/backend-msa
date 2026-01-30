@@ -19,11 +19,11 @@ import java.util.concurrent.TimeUnit;
 public class RabbitMQConfig {
 
     @Value("${rabbitmq.user-deleted.exchange}")
-    private String deletedUserExchangeName;
+    private String userDeletedExchangeName;
 
     @Bean
-    public DirectExchange deletedUserExchange() {
-        return new DirectExchange(deletedUserExchangeName);
+    public DirectExchange userDeletedExchange() {
+        return new DirectExchange(userDeletedExchangeName);
     }
 
     /**

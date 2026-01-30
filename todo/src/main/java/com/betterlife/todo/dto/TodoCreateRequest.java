@@ -27,7 +27,7 @@ public class TodoCreateRequest {
     @Schema(example = "2026-01-15")
     private LocalDate occurrenceDate;
 
-    @Schema(example = "00:00:00", nullable = true)
+    @Schema(type = "string", format = "time", example = "00:00:00", nullable = true)
     private LocalTime atTime;
 
     @Builder

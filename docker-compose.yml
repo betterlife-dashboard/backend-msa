@@ -80,17 +80,8 @@ services:
 
   auth:
     build: ./auth
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      AUTH_DATASOURCE_URL: jdbc:mysql://mysql-auth:3306/auth_db
-      AUTH_DATASOURCE_USERNAME: root
-      AUTH_DATASOURCE_PASSWORD: root
-      TODO_SERVICE_URL: http://todo:8082
-      AUTH_REDIS_HOST: redis
-      AUTH_REDIS_PORT: 6379
-      # Hikari가 DB 준비전 실패하지 않게(0 = fail-fast 끔)
-      SPRING_DATASOURCE_HIKARI_INITIALIZATIONFAILTIMEOUT: "0"
-      JWT_SECRET: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing
+    env_file:
+      - deploy/auth.env
     ports:
       - "8081:8081"
     depends_on:
@@ -102,18 +93,8 @@ services:
 
   todo:
     build: ./todo
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      TODO_DATASOURCE_URL: jdbc:mysql://mysql-todo:3306/todo_db
-      TODO_DATASOURCE_USERNAME: root
-      TODO_DATASOURCE_PASSWORD: root
-      AUTH_SERVICE_URL: http://auth:8081
-      RABBIT_URL: rabbit
-      RABBIT_PORT: 5672
-      RABBIT_USERNAME: admin
-      RABBIT_PASSWORD: admin
-      # Hikari가 DB 준비전 실패하지 않게(0 = fail-fast 끔)
-      SPRING_DATASOURCE_HIKARI_INITIALIZATIONFAILTIMEOUT: "0"
+    env_file:
+      - deploy/todo.env
     ports:
       - "8082:8082"
     depends_on:
@@ -123,19 +104,8 @@ services:
 
   notify:
     build: ./notify
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      NOTIFY_DATASOURCE_URL: jdbc:mysql://mysql-notify:3306/notify_db
-      NOTIFY_DATASOURCE_USERNAME: root
-      NOTIFY_DATASOURCE_PASSWORD: root
-      RABBIT_URL: rabbit
-      RABBIT_PORT: 5672
-      RABBIT_USERNAME: admin
-      RABBIT_PASSWORD: admin
-      NOTIFY_REDIS_HOST: redis
-      NOTIFY_REDIS_PORT: 6379
-      # Hikari가 DB 준비전 실패하지 않게(0 = fail-fast 끔)
-      SPRING_DATASOURCE_HIKARI_INITIALIZATIONFAILTIMEOUT: "0"
+    env_file:
+      - deploy/notify.env
     ports:
       - "8083:8083"
     depends_on:
@@ -145,17 +115,8 @@ services:
 
   focus:
     build: ./focus
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      FOCUS_DATASOURCE_URL: jdbc:mysql://mysql-focus:3306/focus_db
-      FOCUS_DATASOURCE_USERNAME: root
-      FOCUS_DATASOURCE_PASSWORD: root
-      RABBIT_URL: rabbit
-      RABBIT_PORT: 5672
-      RABBIT_USERNAME: admin
-      RABBIT_PASSWORD: admin
-      # Hikari가 DB 준비전 실패하지 않게(0 = fail-fast 끔)
-      SPRING_DATASOURCE_HIKARI_INITIALIZATIONFAILTIMEOUT: "0"
+    env_file:
+      - deploy/focus.env
     ports:
       - "8084:8084"
     depends_on:
@@ -165,22 +126,10 @@ services:
 
   gateway:
     build: ./gateway
+    env_file:
+      - deploy/gateway.env
     environment:
-      SPRING_PROFILES_ACTIVE: docker
-      AUTH_SERVICE_URL: http://auth:8081
-      TODO_SERVICE_URL: http://todo:8082
-      NOTIFY_SERVICE_URL: http://notify:8083
-      FOCUS_SERVICE_URL: http://focus:8083
-      OPENAPI_SERVICES_0_NAME: auth
-      OPENAPI_SERVICES_0_URL: http://auth:8081
-      OPENAPI_SERVICES_1_NAME: todo
-      OPENAPI_SERVICES_1_URL: http://todo:8082
-      OPENAPI_SERVICES_2_NAME: notify
-      OPENAPI_SERVICES_2_URL: http://notify:8083
-      OPENAPI_SERVICES_3_NAME: focus
-      OPENAPI_SERVICES_3_URL: http://focus:8084
       FRONTEND_URL: http://localhost:5173
-      JWT_SECRET: this-is-a-very-very-long-and-strong-secret-key-for-jwt-signing
     ports:
       - "8080:8080"
     restart: on-failure

@@ -4,11 +4,11 @@ import lombok.Builder;
 import lombok.Data;
 
 @Data
-public class UserDeletedEvent {
+public class TodoDeletedEvent {
     private Long id;
 
     @Builder
-    public UserDeletedEvent(Long id) {
+    public TodoDeletedEvent(Long id) {
         this.id = id;
     }
 }

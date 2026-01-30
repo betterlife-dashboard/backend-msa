@@ -1,20 +1,29 @@
 spring:
-  datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
     show-sql: true
   flyway:
-    enabled: false
+    enabled: true
+    locations: classpath:db/migration
 
-auth:
-  service:
-    url: http://localhost:8081
+rabbitmq:
+  user-deleted:
+    exchange: event.user.deleted.exchange
+    queue: event.user.deleted.todo.queue
+    key: event.user.deleted.key
+  todo-deleted:
+    exchange: event.user.deleted.exchange
+    key: event.user.deleted.key
+  todo-updated:
+    exchange: event.user.updated.exchange
+    key: event.user.updated.key
+  user-updated:
+    exchange: event.user.updated.exchange
 
+logging:
+  level:
+    org.hibernate.sql: debug

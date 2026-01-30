@@ -3,6 +3,7 @@ package com.betterlife.todo;
 import com.betterlife.todo.dto.ErrorMessageDto;
 import com.betterlife.todo.exception.AccessDeniedException;
 import com.betterlife.todo.exception.InvalidRequestException;
+import com.betterlife.todo.exception.TodoNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleException(Exception e) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorMessageDto(e.getMessage()));
+    }
+
+    @ExceptionHandler(TodoNotFoundException.class)
+    public ResponseEntity<?> handleTodoNotFound(TodoNotFoundException e) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
                 .body(new ErrorMessageDto(e.getMessage()));
     }
 

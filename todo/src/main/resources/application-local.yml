@@ -13,7 +13,3 @@ spring:
     port: 5672
     username: admin
     password: admin
-
-auth:
-  service:
-    url: http://localhost:8081

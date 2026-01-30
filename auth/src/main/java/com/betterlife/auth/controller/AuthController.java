@@ -85,6 +85,12 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "유효하지 않은 토큰",
                     content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
     })
+    @Parameter(
+            in = ParameterIn.HEADER,
+            name = "refresh_token",
+            required = true,
+            schema = @Schema(type = "string", defaultValue = "token_example", example = "token_example")
+    )
     @PostMapping("/renew")
     public ResponseEntity<LoginResponse> renew(@CookieValue(name = "refresh_token") String refreshToken, HttpServletResponse response) {
         String refresh = authService.checkRefresh(refreshToken);
@@ -105,6 +111,12 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "유효하지 않은 토큰",
                     content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
     })
+    @Parameter(
+            in = ParameterIn.HEADER,
+            name = "refresh_token",
+            required = true,
+            schema = @Schema(type = "string", defaultValue = "token_example", example = "token_example")
+    )
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@CookieValue(name = "refresh_token") String refreshToken) {
         authService.logout(refreshToken);
@@ -117,6 +129,12 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "유효하지 않은 토큰",
                     content = @Content(schema = @Schema(implementation = ErrorMessageDto.class)))
     })
+    @Parameter(
+            in = ParameterIn.HEADER,
+            name = "refresh_token",
+            required = true,
+            schema = @Schema(type = "string", defaultValue = "token_example", example = "token_example")
+    )
     @DeleteMapping("/withdraw")
     public ResponseEntity<Void> withdraw(@CookieValue(name = "refresh_token") String refreshToken) {
         authService.withdraw(refreshToken);

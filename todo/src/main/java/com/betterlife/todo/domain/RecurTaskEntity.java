@@ -39,19 +39,19 @@ public class RecurTaskEntity {
     private RepeatType repeatType;
 
     @Column(name = "repeat_interval", nullable = false)
-    private Integer repeatInterval = 1;
+    private Byte repeatInterval = 1;
 
     @Column(name = "weekly_mask")
-    private Integer weeklyMask;
+    private Byte weeklyMask;
 
     @Column(name = "monthly_day")
-    private Integer monthlyDay;
+    private Byte monthlyDay;
 
     @Column(name = "at_time")
     private LocalTime atTime;
 
     @Column(name = "reminder_mask", nullable = false)
-    private Integer reminderMask = 0;
+    private Byte reminderMask = 0;
 
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
@@ -90,11 +90,11 @@ public class RecurTaskEntity {
             TodoType type,
             boolean allDay,
             RepeatType repeatType,
-            Integer repeatInterval,
-            Integer weeklyMask,
-            Integer monthlyDay,
+            Byte repeatInterval,
+            Byte weeklyMask,
+            Byte monthlyDay,
             LocalTime atTime,
-            Integer reminderMask,
+            Byte reminderMask,
             LocalDate startDate,
             LocalDate endDate,
             LocalDate activeFrom,
@@ -130,7 +130,7 @@ public class RecurTaskEntity {
         }
     }
 
-    public void changeRepeat(RepeatType newRepeatType, Integer newInterval, Integer newRepeat) {
+    public void changeRepeat(RepeatType newRepeatType, Byte newInterval, Byte newRepeat) {
         if (newInterval == null || newInterval < 1) throw new IllegalArgumentException("interval must be >= 1");
         this.repeatType = newRepeatType;
         this.repeatInterval = newInterval;
@@ -150,7 +150,7 @@ public class RecurTaskEntity {
         }
     }
 
-    public void changeReminder(Integer newReminderMask) {
+    public void changeReminder(Byte newReminderMask) {
         this.reminderMask = newReminderMask;
     }
 

@@ -1,20 +1,8 @@
 package com.betterlife.todo.service;
 
-import com.betterlife.todo.client.UserClient;
-import com.betterlife.todo.dto.ScheduleRequest;
-import com.betterlife.todo.dto.ScheduleUpdateRequest;
-import com.betterlife.todo.dto.TodoResponse;
-import com.betterlife.todo.enums.TodoStatus;
-import com.betterlife.todo.event.ScheduleCreatedEvent;
-import com.betterlife.todo.event.ScheduleDeletedEvent;
-import com.betterlife.todo.exception.AccessDeniedException;
-import com.betterlife.todo.message.EventProducer;
-import com.betterlife.todo.repository.TodoRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 
 @Slf4j

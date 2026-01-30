@@ -15,10 +15,10 @@ public class EventProducer {
     private final RabbitTemplate rabbitTemplate;
 
     @Value("${rabbitmq.user-deleted.exchange}")
-    private String deletedUserExchange;
+    private String userDeletedExchange;
 
     @Value("${rabbitmq.user-deleted.key}")
-    private String deletedUserKey;
+    private String userDeletedKey;
 
     public void sendUserDeletedEvent(Long userId) {
         UserDeletedEvent userDeletedEvent = new UserDeletedEvent(userId);
@@ -26,8 +26,8 @@ public class EventProducer {
         CorrelationData cd = new CorrelationData("userDeleted:" + userId + ":" + UUID.randomUUID());
 
         rabbitTemplate.convertAndSend(
-                deletedUserExchange,
-                deletedUserKey,
+                userDeletedExchange,
+                userDeletedKey,
                 userDeletedEvent,
                 message -> {
                     message.getMessageProperties().setMessageId(cd.getId());

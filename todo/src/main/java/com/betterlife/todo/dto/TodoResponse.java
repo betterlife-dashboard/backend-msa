@@ -3,6 +3,7 @@ package com.betterlife.todo.dto;
 import com.betterlife.todo.domain.TodoEntity;
 import com.betterlife.todo.enums.TodoStatus;
 import com.betterlife.todo.enums.TodoType;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,6 +27,8 @@ public class TodoResponse {
     private String memo;
     private boolean allDay;
     private LocalDate occurrenceDate;
+
+    @Schema(type = "string", format = "time", example = "00:00:00", nullable = true)
     private LocalTime atTime;
     private LocalDateTime completedAt;
     private Integer durationSec;

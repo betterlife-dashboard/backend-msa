@@ -1,32 +1,76 @@
 package com.betterlife.todo.service;
 
-import com.betterlife.todo.client.UserClient;
 import com.betterlife.todo.domain.TodoEntity;
 import com.betterlife.todo.dto.*;
 import com.betterlife.todo.enums.TodoStatus;
 import com.betterlife.todo.enums.TodoType;
-import com.betterlife.todo.event.ScheduleDeletedEvent;
+import com.betterlife.todo.event.EventProducer;
 import com.betterlife.todo.exception.AccessDeniedException;
-import com.betterlife.todo.exception.InvalidRequestException;
-import com.betterlife.todo.message.EventProducer;
+import com.betterlife.todo.exception.TodoNotFoundException;
 import com.betterlife.todo.repository.TodoRepository;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class TodoService {
 
     private final TodoRepository todoRepository;
-//    private final EventProducer eventProducer;
-//    private final UserClient userClient;
+    private final EventProducer eventProducer;
+
+    public TodoResponse getTodoById(Long userId, Long todoId) {
+        TodoEntity todo = todoRepository.findById(todoId)
+                .orElseThrow(() -> new TodoNotFoundException("존재하지 않는 Todo입니다."));
+        if (!todo.getUserId().equals(userId)) {
+            throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
+        }
+        return TodoResponse.fromEntity(todo);
+    }
+
+    public TodoResponse createTodo(Long userId, TodoCreateRequest todoCreateRequest) {
+        TodoEntity todo = TodoEntity.builder()
+                .userId(userId)
+                .recurTask(null)
+                .todoType(TodoType.TODO)
+                .todoStatus(TodoStatus.PENDING)
+                .title(todoCreateRequest.getTitle())
+                .memo(todoCreateRequest.getMemo())
+                .allDay(todoCreateRequest.isAllDay())
+                .occurrenceDate(todoCreateRequest.getOccurrenceDate())
+                .atTime(todoCreateRequest.getAtTime())
+                .completedAt(null)
+                .durationSec(null)
+                .build();
+        TodoEntity saved = todoRepository.save(todo);
+        return TodoResponse.fromEntity(saved);
+    }
+
+    public void deleteTodo(Long userId, Long todoId) {
+        TodoEntity todo = todoRepository.findById(todoId)
+                .orElseThrow(() -> new TodoNotFoundException("존재하지 않는 Todo입니다."));
+        if (!todo.getUserId().equals(userId)) {
+            throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
+        }
+        eventProducer.sendTodoDeletedEvent(todoId);
+        todoRepository.deleteById(todoId);
+    }
+
+    @Transactional
+    public TodoResponse updateTodo(Long userId, Long todoId, TodoUpdateRequest todoRequest) {
+        TodoEntity todo = todoRepository.findById(todoId).orElseThrow(() -> new TodoNotFoundException("존재하지 않는 Todo입니다."));
+        if (!todo.getUserId().equals(userId)) {
+            throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
+        }
+        todo.update(todoRequest);
+        eventProducer.sendTodoUpdatedEvent(todoId, todoRequest.getReminderMask());
+        return TodoResponse.fromEntity(todo);
+    }
+
+    @Transactional
+    public void deleteUser(Long userId) {
+        todoRepository.deleteAllByUserId(userId);
+    }
 
 //    public List<TodoResponse> getTodosByDate(Long userId, LocalDate date) {
 //        LocalDateTime todayStart = date.atStartOfDay();
@@ -45,48 +89,7 @@ public class TodoService {
 //                .map(TodoResponse::fromEntity)
 //                .toList();
 //    }
-//
-    public TodoResponse getTodoById(Long userId, Long todoId) {
-        TodoEntity todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
-        if (!todo.getUserId().equals(userId)) {
-            throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
-        }
-        return TodoResponse.fromEntity(todo);
-    }
-//
-    public TodoResponse createTodo(Long userId, TodoCreateRequest todoCreateRequest) {
-        TodoEntity todo = TodoEntity.builder()
-                .userId(userId)
-                .recurTask(null)
-                .todoType(TodoType.TODO)
-                .todoStatus(TodoStatus.PENDING)
-                .title(todoCreateRequest.getTitle())
-                .memo(todoCreateRequest.getMemo())
-                .allDay(todoCreateRequest.isAllDay())
-                .occurrenceDate(todoCreateRequest.getOccurrenceDate())
-                .atTime(todoCreateRequest.getAtTime())
-                .completedAt(null)
-                .durationSec(null)
-                .build();
-        TodoEntity saved = todoRepository.save(todo);
-        return TodoResponse.fromEntity(saved);
-    }
-//
-//    @Transactional
-//    public TodoResponse updateTodo(Long userId, Long todoId, TodoUpdateRequest todoRequest) {
-//        Todo todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
-//        if (!todo.getUserId().equals(userId)) {
-//            throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
-//        }
-//
-//        todo.changeTitle(todoRequest.getTitle());
-//        todo.changeType(todoRequest.getType());
-//        todo.updateStatus(todoRequest.getStatus());
-//        todo.changeActiveDate(todoRequest.getActiveFrom(), todoRequest.getActiveUntil());
-//
-//        return TodoResponse.fromEntity(todo);
-//    }
-//
+
 //    @Transactional
 //    public TodoResponse updateRepeatTodo(Long userId, Long todoId, RepeatTodoUpdateRequest todoRequest) {
 //        Todo todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
@@ -102,31 +105,7 @@ public class TodoService {
 //
 //        return TodoResponse.fromEntity(todo);
 //    }
-//
-//    public void deleteTodo(Long userId, Long todoId) {
-//        Todo todo = todoRepository.findById(todoId).orElseThrow(() -> new EntityNotFoundException("존재하지 않는 Todo입니다."));
-//        if (!todo.getUserId().equals(userId)) {
-//            throw new AccessDeniedException("이 Todo에 접근할 권한이 없습니다.");
-//        }
-//        if (todo.getType().equals(TodoType.SCHEDULE)) {
-//            eventProducer.sendScheduleDeletedEvent(ScheduleDeletedEvent.builder()
-//                    .todoId(todo.getId())
-//                    .userId(todo.getUserId())
-//                    .build());
-//        }
-//        todoRepository.deleteById(todoId);
-//    }
-//
-//    @Transactional
-//    public void deleteUser(Long userId) {
-//        List<Todo> allByUserId = todoRepository.findAllByUserId(userId);
-//        if (allByUserId.isEmpty()) {
-//            return ;
-//        }
-////        eventProducer.sendTodoAlarm(ScheduleAlarmEvent.fromEntity(allByUserId.get(0), "delete-user", "", ""));
-//        todoRepository.deleteAllByUserId(userId);
-//    }
-//
+
 //    public List<TodoResponse> getRecurTodos(Long userId) {
 //        return todoRepository.findAllByUserIdAndIsRecurring(userId, true)
 //                .stream()

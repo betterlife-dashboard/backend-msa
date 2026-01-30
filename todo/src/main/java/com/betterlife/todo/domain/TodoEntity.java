@@ -1,5 +1,6 @@
 package com.betterlife.todo.domain;
 
+import com.betterlife.todo.dto.TodoUpdateRequest;
 import com.betterlife.todo.enums.TodoStatus;
 import com.betterlife.todo.enums.TodoType;
 import jakarta.persistence.*;
@@ -136,8 +137,11 @@ public class TodoEntity {
         this.completedAt = null;
     }
 
-    public void writeMemo(String newMemo) {
-        this.memo = newMemo;
+    public void update(TodoUpdateRequest request) {
+        this.todoStatus = request.getTodoStatus();
+        this.title = request.getTitle();
+        this.memo = request.getMemo();
+        changeTime(request.isAllDay(), request.getOccurrenceDate(), request.getAtTime());
     }
 
     public void changeTime(boolean newAllDay, LocalDate newOccurrenceDate, LocalTime newAtTime) {
